@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataSense AI - Media Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+    :root {
+        --bg: #0b0b1e;
+        --surface: #16162f;
+        --surface-2: #1d1d3d;
+        --border: rgba(255, 255, 255, 0.09);
+        --text: #e8e9f5;
+        --text-dim: #8b8fb8;
+        --text-dimmer: #5c5e6b;
+
+        --indigo: #4f46e5;
+        --violet: #7c3aed;
+        --pink: #ec4899;
+        --teal: #22d3ee;
+        --emerald: #10b981;
+        --amber: #f59e0b;
+        --rose: #f43f5e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--bg); }
+
+    body {
+        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+        background: radial-gradient(ellipse 90% 60% at 20% 0%, #241d55 0%, var(--bg) 55%);
+        color: var(--text);
+        min-height: 100vh;
+        font-variant-numeric: tabular-nums;
+        position: relative;
+        overflow-x: hidden;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation: none !important; transition: none !important; }
+        .scan-line { animation: none; top: 50%; }
+    }
+
+    a { outline-offset: 3px; }
+    a:focus-visible, button:focus-visible { outline: 2px solid var(--indigo); }
+
+    /* ===== Ambient floating chips ===== */
+    .chip-field { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+
+    .chip {
+        position: absolute;
+        bottom: -60px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 13px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.045);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        backdrop-filter: blur(6px);
+        font-size: 11.5px;
+        color: #c7cbf0;
+        white-space: nowrap;
+        animation: floatChip linear infinite;
+    }
+
+    @keyframes floatChip {
+        0% { transform: translateY(0) scale(0.92); opacity: 0; }
+        8% { opacity: 0.8; }
+        90% { opacity: 0.8; }
+        100% { transform: translateY(-115vh) scale(1); opacity: 0; }
+    }
+
+    .chip1 { left: 5%;  animation-duration: 20s; animation-delay: 0s; }
+    .chip2 { left: 18%; animation-duration: 24s; animation-delay: 5s; }
+    .chip3 { left: 33%; animation-duration: 19s; animation-delay: 9s; }
+    .chip4 { left: 48%; animation-duration: 25s; animation-delay: 2s; }
+    .chip5 { left: 63%; animation-duration: 21s; animation-delay: 11s; }
+    .chip6 { left: 78%; animation-duration: 23s; animation-delay: 6s; }
+    .chip7 { left: 90%; animation-duration: 22s; animation-delay: 13s; }
+
+    @media (max-width: 600px) { .chip-field { display: none; } }
+
+    .navbar {
+        background: rgba(11, 11, 30, 0.75);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--border);
+        padding: 16px 30px;
+        display: flex; justify-content: space-between; align-items: center;
+        position: sticky; top: 0; z-index: 10;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-mark {
+        width: 32px; height: 32px; border-radius: 8px;
+        background: linear-gradient(135deg, var(--indigo), var(--pink));
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700; font-size: 15px; color: #fff; flex-shrink: 0;
+        box-shadow: 0 0 20px rgba(124, 58, 237, 0.4);
+    }
+    .navbar h2 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 600; letter-spacing: -0.2px; }
+    .nav-links a {
+        color: var(--text-dim); text-decoration: none; font-size: 13.5px;
+        font-weight: 600; margin-left: 22px; transition: color 0.15s ease;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    .hero { padding: 36px 30px 10px; position: relative; z-index: 1; }
+    .hero-inner { max-width: 1280px; margin: 0 auto; }
+    .hero h1 { font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.4px; margin-bottom: 6px; }
+    .hero p { font-size: 14px; color: var(--text-dim); }
+    .hero p strong { color: var(--text); font-weight: 600; }
+
+    .container { max-width: 1280px; margin: 0 auto 50px; padding: 22px 30px 0; position: relative; z-index: 1; }
+
+    /* ---------- upload zone ---------- */
+    .dropzone {
+        border: 1.5px dashed rgba(255,255,255,0.14);
+        border-radius: 20px;
+        background: var(--surface);
+        padding: 64px 24px;
+        text-align: center;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: border-color 0.2s ease, background 0.2s ease;
+    }
+    .dropzone:hover, .dropzone.drag-over {
+        border-color: var(--indigo);
+        background: var(--surface-2);
+    }
+    .dropzone::before {
+        content: '';
+        position: absolute; inset: -2px;
+        background: conic-gradient(from 0deg, var(--indigo), var(--violet), var(--pink), var(--indigo));
+        opacity: 0; transition: opacity 0.3s ease;
+        filter: blur(30px);
+        z-index: -1;
+    }
+    .dropzone.drag-over::before { opacity: 0.35; }
+
+    .dz-icon {
+        width: 56px; height: 56px; margin: 0 auto 18px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, var(--indigo), var(--violet));
+        display: flex; align-items: center; justify-content: center;
+        font-size: 24px;
+    }
+    .dropzone h3 { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+    .dropzone p { font-size: 13px; color: var(--text-dim); }
+    .dropzone .formats { font-size: 11.5px; color: var(--text-dimmer); margin-top: 14px; font-weight: 600; letter-spacing: 0.3px; }
+    .dropzone input[type="file"] { display: none; }
+
+    /* ---------- loading state ---------- */
+    .loading-state {
+        text-align: center;
+        padding: 70px 20px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+    .scan-frame {
+        width: 220px; height: 140px; margin: 0 auto 24px;
+        border-radius: 12px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        position: relative; overflow: hidden;
+    }
+    .scan-frame img, .scan-frame video {
+        width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+    .scan-line {
+        position: absolute; left: 0; right: 0; height: 2px;
+        background: linear-gradient(90deg, transparent, var(--teal), transparent);
+        box-shadow: 0 0 12px 2px var(--teal);
+        animation: scan 1.6s ease-in-out infinite;
+    }
+    @keyframes scan {
+        0% { top: 0%; }
+        50% { top: 96%; }
+        100% { top: 0%; }
+    }
+    .loading-state h3 { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .loading-state p { font-size: 13px; color: var(--text-dim); }
+
+    /* ---------- results ---------- */
+    .results-header {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 22px; flex-wrap: wrap; gap: 12px;
+    }
+    .results-header .file-info { font-size: 14px; color: var(--text-dim); }
+    .results-header .file-info strong { color: var(--text); font-weight: 700; }
+
+    .btn-reset {
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-size: 13px; font-weight: 600;
+        padding: 9px 16px; border-radius: 10px;
+        cursor: pointer;
+        transition: border-color 0.15s ease;
+    }
+    .btn-reset:hover { border-color: var(--indigo); }
+
+    .preview-card {
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: 16px; padding: 16px; margin-bottom: 20px;
+        display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+    }
+    .preview-card .thumb {
+        width: 96px; height: 72px; border-radius: 10px; overflow: hidden;
+        background: var(--surface-2); flex-shrink: 0;
+    }
+    .preview-card .thumb img, .preview-card .thumb video {
+        width: 100%; height: 100%; object-fit: cover;
+    }
+    .preview-card .meta { font-size: 13px; color: var(--text-dim); }
+    .preview-card .meta strong { color: var(--text); display: block; font-size: 14.5px; margin-bottom: 3px; }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 26px; }
+    .kpi-card {
+        background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+        padding: 20px 22px; position: relative; overflow: hidden;
+        box-shadow: 0 20px 45px -28px rgba(0,0,0,0.7);
+        transition: transform 0.18s ease, border-color 0.18s ease;
+    }
+    .kpi-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.16); }
+    .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 3px; background: var(--accent, var(--indigo)); }
+    .kpi-card:nth-child(4n+1) { --accent: var(--indigo); }
+    .kpi-card:nth-child(4n+2) { --accent: var(--pink); }
+    .kpi-card:nth-child(4n+3) { --accent: var(--emerald); }
+    .kpi-card:nth-child(4n+4) { --accent: var(--amber); }
+    .kpi-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+    .kpi-icon {
+        font-size: 18px; display: inline-flex; align-items: center; justify-content: center;
+        width: 38px; height: 38px; background: color-mix(in srgb, var(--accent, var(--indigo)) 16%, transparent);
+        border-radius: 11px;
+    }
+    .kpi-card .value { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 4px; letter-spacing: -0.3px; }
+    .kpi-card .label { font-size: 11.5px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 16px; grid-auto-flow: dense; }
+    .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px 24px; box-shadow: 0 20px 45px -28px rgba(0,0,0,0.7); min-width: 0; }
+    .chart-card.wide { grid-column: 1 / -1; }
+    .chart-card h3 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 18px;
+        display: flex; align-items: center; gap: 9px; letter-spacing: -0.1px;
+    }
+    .chart-card h3::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--dot, var(--indigo)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--dot, var(--indigo)) 18%, transparent); display: inline-block; flex-shrink: 0; }
+    .chart-card:nth-child(4n+1) { --dot: var(--indigo); }
+    .chart-card:nth-child(4n+2) { --dot: var(--pink); }
+    .chart-card:nth-child(4n+3) { --dot: var(--emerald); }
+    .chart-card:nth-child(4n+4) { --dot: var(--amber); }
+
+    .chart-wrap { position: relative; height: 280px; }
+    canvas { max-height: 280px; }
+    .stat-visual { display: flex; flex-direction: column; justify-content: center; height: 280px; }
+    .stat-visual .stat-value { font-family: 'JetBrains Mono', monospace; font-size: 44px; font-weight: 700; letter-spacing: -1px; color: var(--text); }
+    .stat-visual .stat-sub { font-size: 12.5px; color: var(--text-dim); margin-top: 8px; font-weight: 600; }
+
+    .table-wrap { overflow: auto; max-height: 320px; }
+    .table-wrap table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .table-wrap th { position: sticky; top: 0; text-align: left; color: var(--text-dim); text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.5px; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--surface); }
+    .table-wrap td { padding: 11px 14px; border-bottom: 1px solid rgba(255,255,255,0.045); color: var(--text); }
+    .table-wrap tr:last-child td { border-bottom: none; }
+    .table-wrap tr:hover td { background: rgba(255,255,255,0.025); }
+
+    .hidden { display: none !important; }
+    .error-banner {
+        background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.3);
+        color: #ff8fa3; border-radius: 12px; padding: 14px 18px; font-size: 13px; margin-bottom: 20px;
+    }
+
+    @media (max-width: 560px) {
+        .navbar { padding: 14px 18px; }
+        .nav-links a { margin-left: 14px; font-size: 12px; }
+        .hero, .container { padding-left: 18px; padding-right: 18px; }
+        .hero h1 { font-size: 22px; }
+        .dropzone { padding: 44px 18px; }
+    }
+</style>
+</head>
+<body>
+
+<div class="chip-field" aria-hidden="true">
+    <div class="chip chip1">🎨 Color extracted</div>
+    <div class="chip chip2">📐 Resolution detected</div>
+    <div class="chip chip3">✨ Analyzing locally</div>
+    <div class="chip chip4">🔍 Scanning pixels</div>
+    <div class="chip chip5">🏃 Motion tracked</div>
+    <div class="chip chip6">🎬 Scene cut found</div>
+    <div class="chip chip7">🔒 Nothing uploaded</div>
+</div>
+
+<div class="navbar">
+    <div class="brand">
+        <span class="brand-mark">D</span>
+        <h2>DataSense AI</h2>
+    </div>
+    <div class="nav-links">
+        <a href="#" id="navReset">New Analysis</a>
+    </div>
+</div>
+
+<div class="hero">
+    <div class="hero-inner">
+        <h1>Media Analysis</h1>
+        <p>Drop in an image or video and get an instant breakdown — <strong>brightness, color, sharpness, motion, scene cuts</strong> and more, computed right in your browser.</p>
+    </div>
+</div>
+
+<div class="container">
+
+    <div id="errorBanner" class="error-banner hidden"></div>
+
+    <div id="uploadSection">
+        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload an image or video for analysis">
+            <div class="dz-icon">📊</div>
+            <h3>Drop an image or video here</h3>
+            <p>or click to browse your files</p>
+            <div class="formats">JPG · PNG · GIF · WEBP &nbsp;·&nbsp; MP4 · WEBM · MOV</div>
+            <input type="file" id="fileInput" accept="image/*,video/*">
+        </div>
+    </div>
+
+    <div id="loadingSection" class="loading-state hidden">
+        <div class="scan-frame" id="scanFrame">
+            <div class="scan-line"></div>
+        </div>
+        <h3 id="loadingTitle">Analyzing…</h3>
+        <p id="loadingSubtitle">Reading pixels and computing metrics</p>
+    </div>
+
+    <div id="resultsSection" class="hidden">
+        <div class="results-header">
+            <div class="file-info">Analysis of <strong id="resultsFileName"></strong></div>
+            <button class="btn-reset" id="btnReset">Analyze another file</button>
+        </div>
+        <div class="preview-card" id="previewCard"></div>
+        <div class="kpi-grid" id="kpiGrid"></div>
+        <div class="chart-grid" id="chartGrid"></div>
+    </div>
+
+</div>
+
+<script>
+/* =====================================================================
+   DataSense AI — client-side media analysis
+   Everything below runs entirely in the browser: nothing is uploaded
+   to a server. Images and videos are read via the Canvas API and
+   analyzed with plain JS (pixel stats, color quantization, a Laplacian
+   sharpness pass for images; sampled brightness/motion/scene-cut
+   detection for video).
+   ===================================================================== */
+
+const palette = ['#4f46e5', '#ec4899', '#22d3ee', '#f59e0b', '#7c3aed', '#10b981', '#f43f5e', '#a3e635'];
+const gridColor = 'rgba(255,255,255,0.06)';
+const textColor = '#8b8fb8';
+
+Chart.defaults.font.family = "'Inter', 'Segoe UI', Arial, sans-serif";
+Chart.defaults.color = textColor;
+
+const centerTextPlugin = {
+    id: 'centerText',
+    beforeDraw(chart) {
+        const opts = chart.options.plugins && chart.options.plugins.centerText;
+        if (!opts) return;
+        const { ctx, chartArea } = chart;
+        if (!chartArea) return;
+        const { left, right, top, bottom } = chartArea;
+        const cx = (left + right) / 2;
+        const cy = opts.kind === 'gauge' ? bottom - 6 : (top + bottom) / 2;
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        if (opts.kind === 'total') {
+            const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+            ctx.fillStyle = '#e8e9f5';
+            ctx.font = "700 24px 'JetBrains Mono', monospace";
+            ctx.fillText(total.toLocaleString(), cx, cy - 10);
+            ctx.fillStyle = '#8b8fb8';
+            ctx.font = "700 10px 'Inter', sans-serif";
+            ctx.fillText('TOTAL', cx, cy + 12);
+        } else if (opts.kind === 'gauge') {
+            ctx.fillStyle = '#e8e9f5';
+            ctx.font = "700 26px 'JetBrains Mono', monospace";
+            ctx.fillText(opts.value + (opts.suffix || ''), cx, cy - 16);
+        }
+        ctx.restore();
+    }
+};
+Chart.register(centerTextPlugin);
+
+const baseTooltip = {
+    backgroundColor: '#1d1d3d', borderColor: 'rgba(255,255,255,0.09)', borderWidth: 1,
+    padding: 12, cornerRadius: 10, titleColor: '#e8e9f5', bodyColor: '#c7cbf0',
+    titleFont: { weight: '700' }, displayColors: true, boxPadding: 4
+};
+
+function legendLabels() {
+    return { boxWidth: 8, boxHeight: 8, usePointStyle: true, pointStyle: 'circle', padding: 16, color: textColor, font: { size: 11, weight: '600' } };
+}
+function baseOptions(showLegend) {
+    return {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: !!showLegend, position: 'bottom', labels: legendLabels() }, tooltip: baseTooltip },
+        scales: {
+            y: { beginAtZero: true, grid: { color: gridColor }, border: { display: false }, ticks: { color: textColor, font: { size: 11 } } },
+            x: { grid: { display: false }, border: { display: false }, ticks: { color: textColor, font: { size: 11 } } }
+        }
+    };
+}
+
+function el(html) {
+    const t = document.createElement('template');
+    t.innerHTML = html.trim();
+    return t.content.firstChild;
+}
+
+/* ---------------------------------------------------------------------
+   Chart renderer — same widget schema as the main data dashboard
+   (bar, line, area, donut, gauge, stacked_bar, table, card).
+   --------------------------------------------------------------------- */
+function renderCanvasChart(canvas, ctx, chart, accent) {
+    const type = chart.type;
+    let config = null;
+
+    if (type === 'stacked_bar') {
+        const series = chart.series || [];
+        config = {
+            type: 'bar',
+            data: { labels: chart.labels, datasets: series.map((s, i) => ({
+                label: s.name, data: s.values, backgroundColor: palette[i % palette.length],
+                borderRadius: 6, maxBarThickness: 46
+            })) },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: true, position: 'bottom', labels: legendLabels() }, tooltip: { ...baseTooltip, mode: 'index', intersect: false } },
+                scales: {
+                    x: { stacked: true, grid: { display: false }, border: { display: false }, ticks: { color: textColor, font: { size: 11 } } },
+                    y: { stacked: true, beginAtZero: true, grid: { color: gridColor }, border: { display: false }, ticks: { color: textColor, font: { size: 11 } } }
+                }
+            }
+        };
+    } else if (type === 'gauge') {
+        const value = chart.value || 0;
+        const max = chart.max || 100;
+        config = {
+            type: 'doughnut',
+            data: { datasets: [{ data: [value, Math.max(max - value, 0)], backgroundColor: [accent, 'rgba(255,255,255,0.06)'], borderWidth: 0 }] },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                rotation: -90, circumference: 180, cutout: '75%',
+                plugins: { legend: { display: false }, tooltip: { enabled: false }, centerText: { kind: 'gauge', value: value, suffix: chart.suffix || '' } }
+            }
+        };
+    } else {
+        const isPie = type === 'pie' || type === 'donut' || type === 'doughnut';
+        const isLine = type === 'line' || type === 'area';
+        const isBar = type === 'bar' || type === 'column' || type === 'bar_horizontal';
+        const chartType = isPie ? 'doughnut' : (isBar ? 'bar' : 'line');
+
+        let backgroundColor = accent;
+        if (isPie) {
+            backgroundColor = palette;
+        } else if (isLine) {
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height || 280);
+            gradient.addColorStop(0, accent + '59');
+            gradient.addColorStop(1, accent + '00');
+            backgroundColor = type === 'area' ? gradient : 'transparent';
+        } else if (isBar) {
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height || 280);
+            gradient.addColorStop(0, accent);
+            gradient.addColorStop(1, '#7c3aed');
+            backgroundColor = gradient;
+        }
+
+        config = {
+            type: chartType,
+            data: { labels: chart.labels, datasets: [{
+                label: chart.title, data: chart.values, backgroundColor: backgroundColor,
+                borderColor: isLine ? accent : (isPie ? '#16162f' : 'transparent'),
+                borderWidth: isPie ? 3 : (isLine ? 2.5 : 0),
+                borderRadius: isBar ? 8 : 0, maxBarThickness: isBar ? 46 : undefined,
+                fill: isLine, tension: 0.4,
+                pointBackgroundColor: accent, pointBorderColor: '#16162f', pointBorderWidth: 2,
+                pointRadius: 0, pointHoverRadius: isLine ? 5 : 0,
+                cutout: isPie ? '68%' : undefined, hoverOffset: isPie ? 6 : 0
+            }] },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                indexAxis: type === 'bar_horizontal' ? 'y' : 'x',
+                interaction: { mode: 'index', intersect: false },
+                plugins: { legend: { display: isPie, position: 'bottom', labels: legendLabels() }, tooltip: baseTooltip, centerText: isPie ? { kind: 'total' } : undefined },
+                scales: isPie ? {} : {
+                    y: { beginAtZero: true, grid: { color: gridColor, drawTicks: false }, border: { display: false }, ticks: { color: textColor, font: { size: 11 }, padding: 8 } },
+                    x: { grid: { display: false }, border: { display: false }, ticks: { color: textColor, font: { size: 11 } } }
+                }
+            }
+        };
+    }
+    new Chart(ctx, config);
+}
+
+function renderCard(container, chart) {
+    container.innerHTML = `<div class="stat-value">${chart.value ?? ''}</div><div class="stat-sub">${chart.label ?? ''}</div>`;
+}
+function renderTable(container, chart) {
+    const columns = chart.columns || [];
+    const rows = chart.rows || [];
+    let html = '<table><thead><tr>' + columns.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
+    rows.forEach(row => { html += '<tr>' + row.map(cell => `<td>${cell}</td>`).join('') + '</tr>'; });
+    html += '</tbody></table>';
+    container.appendChild(el(html));
+}
+
+function renderResults(result, fileName, previewEl) {
+    document.getElementById('resultsFileName').textContent = fileName;
+
+    const previewCard = document.getElementById('previewCard');
+    previewCard.innerHTML = '';
+    const thumb = el(`<div class="thumb"></div>`);
+    thumb.appendChild(previewEl);
+    previewCard.appendChild(thumb);
+    previewCard.appendChild(el(`<div class="meta"><strong>${fileName}</strong>Analyzed locally in your browser — nothing was uploaded.</div>`));
+
+    const kpiGrid = document.getElementById('kpiGrid');
+    kpiGrid.innerHTML = '';
+    result.kpis.forEach(kpi => {
+        kpiGrid.appendChild(el(`
+            <div class="kpi-card">
+                <div class="kpi-top"><span class="kpi-icon">${kpi.icon}</span></div>
+                <div class="value">${kpi.value}</div>
+                <div class="label">${kpi.label}</div>
+            </div>
+        `));
+    });
+
+    const chartGrid = document.getElementById('chartGrid');
+    chartGrid.innerHTML = '';
+    const wideTypes = ['table', 'stacked_bar'];
+    result.charts.forEach((chart, i) => {
+        const wide = wideTypes.includes(chart.type) ? 'wide' : '';
+        let inner;
+        if (chart.type === 'table') inner = `<div class="table-wrap" id="chart${i}"></div>`;
+        else if (chart.type === 'card') inner = `<div class="stat-visual" id="chart${i}"></div>`;
+        else inner = `<div class="chart-wrap"><canvas id="chart${i}"></canvas></div>`;
+        chartGrid.appendChild(el(`<div class="chart-card ${wide}"><h3>${chart.title}</h3>${inner}</div>`));
+    });
+
+    result.charts.forEach((chart, i) => {
+        const container = document.getElementById('chart' + i);
+        const accent = palette[i % palette.length];
+        if (chart.type === 'table') { renderTable(container, chart); return; }
+        if (chart.type === 'card') { renderCard(container, chart); return; }
+        renderCanvasChart(container, container.getContext('2d'), chart, accent);
+    });
+
+    document.getElementById('uploadSection').classList.add('hidden');
+    document.getElementById('loadingSection').classList.add('hidden');
+    document.getElementById('resultsSection').classList.remove('hidden');
+}
+
+/* =====================================================================
+   IMAGE ANALYSIS
+   ===================================================================== */
+function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map(c => Math.max(0, Math.min(255, Math.round(c))).toString(16).padStart(2, '0')).join('');
+}
+
+function loadImageEl(file) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+    });
+}
+
+async function analyzeImage(file) {
+    const img = await loadImageEl(file);
+    const width = img.naturalWidth, height = img.naturalHeight;
+    const fileSizeKB = (file.size / 1024).toFixed(1);
+    const format = (file.type.split('/')[1] || 'unknown').toUpperCase();
+    const aspectRatio = height ? (width / height).toFixed(2) : 0;
+
+    const maxDim = 320;
+    const scale = Math.min(1, maxDim / Math.max(width, height));
+    const cw = Math.max(1, Math.round(width * scale));
+    const ch = Math.max(1, Math.round(height * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = cw; canvas.height = ch;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, cw, ch);
+    const data = ctx.getImageData(0, 0, cw, ch).data;
+    const n = cw * ch;
+
+    let sumGray = 0, sumSat = 0;
+    const grayArr = new Float32Array(n);
+    const rHist = new Array(16).fill(0), gHist = new Array(16).fill(0), bHist = new Array(16).fill(0);
+    const colorVotes = new Map();
+
+    for (let i = 0, p = 0; i < data.length; i += 4, p++) {
+        const r = data[i], g = data[i + 1], b = data[i + 2];
+        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+        grayArr[p] = gray;
+        sumGray += gray;
+
+        const maxC = Math.max(r, g, b), minC = Math.min(r, g, b);
+        sumSat += maxC === 0 ? 0 : (maxC - minC) / maxC;
+
+        rHist[Math.min(15, r >> 4)]++;
+        gHist[Math.min(15, g >> 4)]++;
+        bHist[Math.min(15, b >> 4)]++;
+
+        const key = `${(r >> 5) << 5},${(g >> 5) << 5},${(b >> 5) << 5}`;
+        colorVotes.set(key, (colorVotes.get(key) || 0) + 1);
+    }
+
+    const brightness = (sumGray / n / 255 * 100);
+    const saturation = (sumSat / n * 100);
+    const mean = sumGray / n;
+    let variance = 0;
+    for (let p = 0; p < n; p++) variance += (grayArr[p] - mean) ** 2;
+    const contrast = Math.sqrt(variance / n);
+
+    // sharpness (variance of Laplacian) + edge density
+    let lapSum = 0, lapSumSq = 0, edgeCount = 0, lapN = 0;
+    for (let y = 1; y < ch - 1; y++) {
+        for (let x = 1; x < cw - 1; x++) {
+            const idx = y * cw + x;
+            const val = -4 * grayArr[idx] + grayArr[idx - 1] + grayArr[idx + 1] + grayArr[idx - cw] + grayArr[idx + cw];
+            lapSum += val; lapSumSq += val * val; lapN++;
+            if (Math.abs(val) > 40) edgeCount++;
+        }
+    }
+    const lapMean = lapSum / lapN;
+    const sharpness = (lapSumSq / lapN) - (lapMean * lapMean);
+    const edgeDensity = (edgeCount / lapN * 100);
+
+    const dominant = [...colorVotes.entries()]
+        .sort((a, b) => b[1] - a[1]).slice(0, 5)
+        .map(([key, count]) => {
+            const [r, g, b] = key.split(',').map(Number);
+            return { hex: rgbToHex(r, g, b), pct: +(count / n * 100).toFixed(1) };
+        });
+
+    const histLabels = Array.from({ length: 16 }, (_, i) => String(i * 16));
+
+    const kpis = [
+        { icon: '📐', value: `${width}×${height}`, label: 'Resolution' },
+        { icon: '💾', value: `${fileSizeKB} KB`, label: 'File Size' },
+        { icon: '☀️', value: `${brightness.toFixed(1)}%`, label: 'Brightness' },
+        { icon: '🎯', value: sharpness.toFixed(0), label: 'Sharpness Score' },
+        { icon: '🎨', value: dominant[0].hex.toUpperCase(), label: 'Dominant Color' },
+        { icon: '🖼️', value: format, label: 'Format' },
+    ];
+
+    const charts = [
+        { type: 'stacked_bar', title: 'RGB Channel Distribution', labels: histLabels,
+          series: [{ name: 'Red', values: rHist }, { name: 'Green', values: gHist }, { name: 'Blue', values: bHist }] },
+        { type: 'donut', title: 'Dominant Color Palette', labels: dominant.map(c => c.hex), values: dominant.map(c => c.pct) },
+        { type: 'gauge', title: 'Brightness', value: +brightness.toFixed(1), max: 100, suffix: '%' },
+        { type: 'gauge', title: 'Saturation', value: +saturation.toFixed(1), max: 100, suffix: '%' },
+        { type: 'card', title: 'Edge Density', value: `${edgeDensity.toFixed(1)}%`, label: 'Of pixels are edges (detail level)' },
+        { type: 'table', title: 'Image Properties', columns: ['Property', 'Value'], rows: [
+            ['Format', format], ['Dimensions', `${width} × ${height} px`], ['Aspect Ratio', `${aspectRatio}:1`],
+            ['File Size', `${fileSizeKB} KB`], ['Contrast (std dev)', contrast.toFixed(1)]
+        ] },
+    ];
+
+    URL.revokeObjectURL(img.src);
+    return { kpis, charts };
+}
+
+/* =====================================================================
+   VIDEO ANALYSIS
+   ===================================================================== */
+function loadVideoEl(file) {
+    return new Promise((resolve, reject) => {
+        const video = document.createElement('video');
+        video.preload = 'auto';
+        video.muted = true;
+        video.playsInline = true;
+        video.src = URL.createObjectURL(file);
+        video.onloadedmetadata = () => resolve(video);
+        video.onerror = () => reject(new Error('This browser could not decode this video format.'));
+    });
+}
+function seekTo(video, t) {
+    return new Promise(resolve => {
+        function onSeeked() { video.removeEventListener('seeked', onSeeked); resolve(); }
+        video.addEventListener('seeked', onSeeked);
+        video.currentTime = t;
+    });
+}
+function formatTime(seconds) {
+    const m = Math.floor(seconds / 60), s = Math.floor(seconds % 60);
+    return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+async function analyzeVideo(file, onProgress) {
+    const video = await loadVideoEl(file);
+    const duration = video.duration;
+    const width = video.videoWidth, height = video.videoHeight;
+    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+
+    const cw = 100, ch = Math.max(1, Math.round(100 * height / width));
+    const canvas = document.createElement('canvas');
+    canvas.width = cw; canvas.height = ch;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+    const sampleCount = Math.max(8, Math.min(30, Math.round(duration * 2)));
+    const times = Array.from({ length: sampleCount }, (_, i) => duration * i / Math.max(sampleCount - 1, 1));
+    const SCENE_THRESHOLD = 35;
+
+    const timestamps = [], brightnessSeries = [], motionSeries = [], sceneChanges = [];
+    const colorVotes = new Map();
+    let prevGray = null;
+
+    for (let i = 0; i < times.length; i++) {
+        const t = Math.min(times[i], Math.max(duration - 0.05, 0));
+        await seekTo(video, t);
+        ctx.drawImage(video, 0, 0, cw, ch);
+        const data = ctx.getImageData(0, 0, cw, ch).data;
+        const n = cw * ch;
+        const gray = new Float32Array(n);
+        let sumGray = 0, sumR = 0, sumG = 0, sumB = 0;
+
+        for (let px = 0, p = 0; px < data.length; px += 4, p++) {
+            const r = data[px], g = data[px + 1], b = data[px + 2];
+            const gv = 0.299 * r + 0.587 * g + 0.114 * b;
+            gray[p] = gv; sumGray += gv; sumR += r; sumG += g; sumB += b;
+        }
+
+        const brightness = sumGray / n / 255 * 100;
+        timestamps.push(formatTime(t));
+        brightnessSeries.push(+brightness.toFixed(1));
+
+        if (prevGray) {
+            let diffSum = 0;
+            for (let p = 0; p < n; p++) diffSum += Math.abs(gray[p] - prevGray[p]);
+            const motion = diffSum / n;
+            motionSeries.push(+motion.toFixed(1));
+            if (motion > SCENE_THRESHOLD) sceneChanges.push(formatTime(t));
+        } else {
+            motionSeries.push(0);
+        }
+        prevGray = gray;
+
+        const key = `${Math.round(sumR / n / 32) * 32},${Math.round(sumG / n / 32) * 32},${Math.round(sumB / n / 32) * 32}`;
+        colorVotes.set(key, (colorVotes.get(key) || 0) + 1);
+
+        if (onProgress) onProgress(i + 1, times.length);
+    }
+
+    const avgBrightness = brightnessSeries.reduce((a, b) => a + b, 0) / (brightnessSeries.length || 1);
+    const avgMotion = motionSeries.reduce((a, b) => a + b, 0) / (motionSeries.length || 1);
+
+    const topColors = [...colorVotes.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const totalVotes = topColors.reduce((a, [, c]) => a + c, 0) || 1;
+    const paletteColors = topColors.map(([key, count]) => {
+        const [r, g, b] = key.split(',').map(Number);
+        return { hex: rgbToHex(r, g, b), pct: +(count / totalVotes * 100).toFixed(1) };
+    });
+
+    const kpis = [
+        { icon: '⏱️', value: formatTime(duration), label: 'Duration' },
+        { icon: '📐', value: `${width}×${height}`, label: 'Resolution' },
+        { icon: '💾', value: `${fileSizeMB} MB`, label: 'File Size' },
+        { icon: '🎬', value: sceneChanges.length, label: 'Scene Cuts Detected' },
+        { icon: '☀️', value: `${avgBrightness.toFixed(1)}%`, label: 'Avg. Brightness' },
+        { icon: '🏃', value: avgMotion.toFixed(1), label: 'Avg. Motion Level' },
+    ];
+
+    const charts = [
+        { type: 'line', title: 'Brightness Over Time', labels: timestamps, values: brightnessSeries },
+        { type: 'area', title: 'Motion / Activity Over Time', labels: timestamps, values: motionSeries },
+        { type: 'donut', title: 'Dominant Colors Across Video', labels: paletteColors.map(c => c.hex), values: paletteColors.map(c => c.pct) },
+        { type: 'gauge', title: 'Average Brightness', value: +avgBrightness.toFixed(1), max: 100, suffix: '%' },
+        { type: 'table', title: 'Detected Scene Changes', columns: ['#', 'Timestamp'],
+          rows: sceneChanges.length ? sceneChanges.map((t, i) => [i + 1, t]) : [['-', 'No hard cuts detected']] },
+        { type: 'table', title: 'Video Properties', columns: ['Property', 'Value'], rows: [
+            ['Duration', formatTime(duration)], ['Resolution', `${width} × ${height} px`],
+            ['File Size', `${fileSizeMB} MB`], ['Frames Sampled', sampleCount]
+        ] },
+    ];
+
+    return { kpis, charts, videoEl: video };
+}
+
+/* =====================================================================
+   UI wiring
+   ===================================================================== */
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const uploadSection = document.getElementById('uploadSection');
+const loadingSection = document.getElementById('loadingSection');
+const resultsSection = document.getElementById('resultsSection');
+const errorBanner = document.getElementById('errorBanner');
+const scanFrame = document.getElementById('scanFrame');
+const loadingSubtitle = document.getElementById('loadingSubtitle');
+
+function showError(msg) {
+    errorBanner.textContent = msg;
+    errorBanner.classList.remove('hidden');
+}
+function clearError() { errorBanner.classList.add('hidden'); }
+
+function resetToUpload() {
+    resultsSection.classList.add('hidden');
+    loadingSection.classList.add('hidden');
+    uploadSection.classList.remove('hidden');
+    fileInput.value = '';
+    clearError();
+}
+
+dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } });
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('drag-over');
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files.length) handleFile(fileInput.files[0]); });
+document.getElementById('btnReset').addEventListener('click', resetToUpload);
+document.getElementById('navReset').addEventListener('click', e => { e.preventDefault(); resetToUpload(); });
+
+async function handleFile(file) {
+    clearError();
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    if (!isImage && !isVideo) {
+        showError('Unsupported file type — please upload an image or a video.');
+        return;
+    }
+
+    uploadSection.classList.add('hidden');
+    resultsSection.classList.add('hidden');
+    loadingSection.classList.remove('hidden');
+    scanFrame.innerHTML = '<div class="scan-line"></div>';
+    loadingSubtitle.textContent = isImage ? 'Reading pixels and computing color stats' : 'Sampling frames and tracking motion';
+
+    // preview inside the scanning frame while we work
+    const previewUrl = URL.createObjectURL(file);
+    const previewMedia = isImage ? el(`<img src="${previewUrl}">`) : el(`<video src="${previewUrl}" muted></video>`);
+    scanFrame.appendChild(previewMedia);
+
+    try {
+        let result;
+        if (isImage) {
+            result = await analyzeImage(file);
+        } else {
+            result = await analyzeVideo(file, (done, total) => {
+                loadingSubtitle.textContent = `Sampling frame ${done} of ${total}`;
+            });
+        }
+        const finalPreview = isImage ? el(`<img src="${previewUrl}">`) : el(`<video src="${previewUrl}" muted controls></video>`);
+        renderResults(result, file.name, finalPreview);
+    } catch (err) {
+        console.error(err);
+        showError(`Couldn't analyze this file: ${err.message || err}`);
+        resetToUpload();
+    }
+}
+</script>
+
+</body>
+</html>

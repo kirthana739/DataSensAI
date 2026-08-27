@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataSense AI - Data Quality Analysis</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --navy: #0b0b1e;
+        --surface: #16162f;
+        --surface-2: #1d1d3d;
+        --indigo: #4f46e5;
+        --violet: #7c3aed;
+        --pink: #ec4899;
+        --text: #e8e9f5;
+        --text-dim: #8b8fb8;
+        --border: rgba(255, 255, 255, 0.09);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background: radial-gradient(ellipse 90% 60% at 20% 0%, #241d55 0%, var(--navy) 55%);
+        min-height: 100vh;
+        color: var(--text);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+
+    .chip-field { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+
+    .chip {
+        position: absolute;
+        bottom: -60px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 13px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.045);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        backdrop-filter: blur(6px);
+        font-size: 11.5px;
+        color: #c7cbf0;
+        white-space: nowrap;
+        animation: floatChip linear infinite;
+    }
+
+    @keyframes floatChip {
+        0% { transform: translateY(0) scale(0.92); opacity: 0; }
+        8% { opacity: 0.8; }
+        90% { opacity: 0.8; }
+        100% { transform: translateY(-115vh) scale(1); opacity: 0; }
+    }
+
+    .chip1 { left: 5%;  animation-duration: 20s; animation-delay: 0s; }
+    .chip2 { left: 18%; animation-duration: 24s; animation-delay: 5s; }
+    .chip3 { left: 33%; animation-duration: 19s; animation-delay: 9s; }
+    .chip4 { left: 48%; animation-duration: 25s; animation-delay: 2s; }
+    .chip5 { left: 63%; animation-duration: 21s; animation-delay: 11s; }
+    .chip6 { left: 78%; animation-duration: 23s; animation-delay: 6s; }
+    .chip7 { left: 90%; animation-duration: 22s; animation-delay: 13s; }
+
+    @media (max-width: 600px) { .chip-field { display: none; } }
+
+    .navbar {
+        background: rgba(22, 22, 47, 0.7);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--border);
+        padding: 16px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .navbar-left { display: flex; align-items: center; gap: 12px; }
+
+    .logo-mark {
+        width: 32px; height: 32px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--indigo), var(--pink));
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700; font-size: 15px;
+        box-shadow: 0 0 20px rgba(124, 58, 237, 0.4);
+    }
+
+    .navbar h2 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 600; letter-spacing: -0.2px; }
+
+    .nav-links a { color: var(--text-dim); text-decoration: none; font-size: 13.5px; margin-left: 22px; transition: color 0.15s; }
+    .nav-links a:hover { color: var(--text); }
+
+    .container { max-width: 1000px; margin: 0 auto; padding: 50px 24px 70px; position: relative; z-index: 1; }
+
+    .page-header { position: relative; margin-bottom: 30px; padding: 10px 0; }
+
+    .aurora {
+        position: absolute; top: -100px; left: -60px; right: -60px; height: 300px;
+        z-index: -1; overflow: hidden; pointer-events: none; filter: blur(55px); opacity: 0.5;
+    }
+
+    .aurora-blob { position: absolute; border-radius: 50%; mix-blend-mode: screen; }
+
+    .blob1 { width: 300px; height: 300px; background: radial-gradient(circle, var(--indigo), transparent 70%); top: -60px; left: 5%; animation: blobDrift1 15s ease-in-out infinite; }
+    .blob2 { width: 260px; height: 260px; background: radial-gradient(circle, var(--pink), transparent 70%); top: -30px; left: 30%; animation: blobDrift2 18s ease-in-out infinite; }
+
+    @keyframes blobDrift1 { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(35px, 22px) scale(1.15); } }
+    @keyframes blobDrift2 { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-30px, 18px) scale(0.9); } }
+
+    .page-header h1 {
+        position: relative;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700; font-size: 28px; letter-spacing: -0.6px; margin-bottom: 6px;
+        text-shadow: 0 0 40px rgba(124, 58, 237, 0.35);
+    }
+
+    .page-header p { position: relative; color: var(--text-dim); font-size: 14px; }
+    .page-header p strong { color: var(--text); }
+
+    .score-card {
+        background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+        padding: 26px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); margin-bottom: 26px;
+        display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+    }
+
+    .score-badge {
+        width: 80px; height: 80px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 800;
+        color: white; flex-shrink: 0;
+    }
+
+    .score-badge.grade-A { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 0 30px rgba(16,185,129,0.4); }
+    .score-badge.grade-B { background: linear-gradient(135deg, #4f46e5, #4338ca); box-shadow: 0 0 30px rgba(79,70,229,0.4); }
+    .score-badge.grade-C { background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 0 30px rgba(245,158,11,0.4); }
+    .score-badge.grade-D { background: linear-gradient(135deg, #f97316, #ea580c); box-shadow: 0 0 30px rgba(249,115,22,0.4); }
+    .score-badge.grade-F { background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 0 30px rgba(239,68,68,0.4); }
+
+    .score-details { flex: 1; min-width: 200px; }
+
+    .score-number { font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; color: var(--text); }
+    .score-number span { font-size: 15px; font-weight: 400; color: var(--text-dim); }
+
+    .score-label { font-size: 12.5px; color: var(--text-dim); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.4px; }
+
+    .score-breakdown { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11.5px; color: var(--text-dim); }
+    .score-breakdown span { background: var(--surface-2); border: 1px solid var(--border); padding: 4px 11px; border-radius: 12px; font-family: 'JetBrains Mono', monospace; }
+
+    .summary-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 28px; }
+
+    .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; border-top: 3px solid #444; }
+    .summary-card.total { border-top-color: var(--indigo); }
+    .summary-card.ok { border-top-color: #10b981; }
+    .summary-card.issue { border-top-color: #ef4444; }
+
+    .summary-card .num { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; color: var(--text); }
+    .summary-card .label { font-size: 11px; color: var(--text-dim); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.3px; }
+
+    .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 24px; margin-bottom: 26px; }
+    .chart-card h3 { font-family: 'Space Grotesk', sans-serif; font-size: 15px; color: var(--text); margin-bottom: 16px; }
+
+    canvas { max-height: 280px; }
+
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .detail-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+    .detail-card h4 { font-family: 'Space Grotesk', sans-serif; font-size: 13.5px; color: var(--text); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+
+    .col-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 12.5px; }
+    .col-row:last-child { border-bottom: none; }
+    .col-row .col-name { color: var(--text-dim); }
+    .col-row .col-count { font-weight: 700; color: #fca5a5; font-family: 'JetBrains Mono', monospace; }
+
+    .no-issues { color: #6ee7b7; font-size: 13px; padding: 10px 0; }
+
+    .back-link { display: inline-block; margin-top: 30px; color: #a5b4fc; text-decoration: none; font-weight: 600; font-size: 13.5px; }
+    .back-link:hover { text-decoration: underline; }
+
+    .btn-clean, .btn-issues {
+        text-decoration: none; padding: 12px 22px; border-radius: 10px; font-weight: 600; font-size: 14px;
+        transition: transform 0.12s, box-shadow 0.12s;
+    }
+
+    .btn-clean { background: linear-gradient(135deg, var(--indigo), var(--violet)); color: white; box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35); }
+    .btn-clean:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(79, 70, 229, 0.45); }
+
+    .btn-issues { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3); }
+    .btn-issues:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(245, 158, 11, 0.4); }
+
+    @media (max-width: 800px) {
+        .summary-grid { grid-template-columns: repeat(2, 1fr); }
+        .detail-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 600px) {
+        .navbar { padding: 14px 18px; }
+        .container { padding: 34px 16px 50px; }
+        .page-header h1 { font-size: 22px; }
+    }
+</style>
+</head>
+<body>
+
+<div class="chip-field" aria-hidden="true">
+    <div class="chip chip1">📈 Forecast +14%</div>
+    <div class="chip chip2">🔍 Anomaly flagged</div>
+    <div class="chip chip3">✅ Data cleaned</div>
+    <div class="chip chip4">🎯 Segment: Champion</div>
+    <div class="chip chip5">🔒 PII masked</div>
+    <div class="chip chip6">📊 Dashboard ready</div>
+    <div class="chip chip7">🏆 Quality Score: A</div>
+</div>
+
+<div class="navbar">
+    <div class="navbar-left">
+        <div class="logo-mark">D</div>
+        <h2>DataSense AI</h2>
+    </div>
+    <div class="nav-links">
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('upload_history') }}">History</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="page-header">
+        <div class="aurora" aria-hidden="true">
+            <div class="aurora-blob blob1"></div>
+            <div class="aurora-blob blob2"></div>
+        </div>
+        <h1>Data Quality Analysis</h1>
+        <p>Results for <strong>{{ file_name }}</strong></p>
+    </div>
+
+    <div class="score-card">
+        <div class="score-badge grade-{{ quality_score.grade }}">{{ quality_score.grade }}</div>
+        <div class="score-details">
+            <div class="score-number">{{ quality_score.score }}<span>/100</span></div>
+            <div class="score-label">Data Quality Score</div>
+            <div class="score-breakdown">
+                <span>Duplicates -{{ quality_score.breakdown.Duplicates }}</span>
+                <span>Nulls -{{ quality_score.breakdown.Nulls }}</span>
+                <span>Unknowns -{{ quality_score.breakdown.Unknowns }}</span>
+                <span>Outliers -{{ quality_score.breakdown.Outliers }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-card total">
+            <div class="num">{{ results.total_records }}</div>
+            <div class="label">Total Records</div>
+        </div>
+        <div class="summary-card {{ 'ok' if results.duplicates.count == 0 else 'issue' }}">
+            <div class="num">{{ results.duplicates.count }}</div>
+            <div class="label">Duplicates</div>
+        </div>
+        <div class="summary-card {{ 'ok' if results.nulls.count == 0 else 'issue' }}">
+            <div class="num">{{ results.nulls.count }}</div>
+            <div class="label">Null Values</div>
+        </div>
+        <div class="summary-card {{ 'ok' if results.unknowns.count == 0 else 'issue' }}">
+            <div class="num">{{ results.unknowns.count }}</div>
+            <div class="label">Unknown Values</div>
+        </div>
+        <div class="summary-card {{ 'ok' if results.outliers.count == 0 else 'issue' }}">
+            <div class="num">{{ results.outliers.count }}</div>
+            <div class="label">Outliers</div>
+        </div>
+    </div>
+
+    <div class="chart-card">
+        <h3>Issue Breakdown</h3>
+        <canvas id="issueChart"></canvas>
+    </div>
+
+    <div class="detail-grid">
+        <div class="detail-card">
+            <h4>❌ Null Values by Column</h4>
+            {% if results.nulls.by_column %}
+                {% for col, count in results.nulls.by_column.items() %}
+                <div class="col-row">
+                    <span class="col-name">{{ col }}</span>
+                    <span class="col-count">{{ count }}</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="no-issues">✅ No null values found</p>
+            {% endif %}
+        </div>
+
+        <div class="detail-card">
+            <h4>❌ Unknown Values by Column</h4>
+            {% if results.unknowns.by_column %}
+                {% for col, count in results.unknowns.by_column.items() %}
+                <div class="col-row">
+                    <span class="col-name">{{ col }}</span>
+                    <span class="col-count">{{ count }}</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="no-issues">✅ No unknown values found</p>
+            {% endif %}
+        </div>
+
+        <div class="detail-card">
+            <h4>❌ Outliers by Column (IQR method)</h4>
+            {% if results.outliers.by_column %}
+                {% for col, count in results.outliers.by_column.items() %}
+                <div class="col-row">
+                    <span class="col-name">{{ col }}</span>
+                    <span class="col-count">{{ count }}</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="no-issues">✅ No outliers found</p>
+            {% endif %}
+        </div>
+
+        <div class="detail-card">
+            <h4>❌ Duplicate Rows</h4>
+            {% if results.duplicates.count > 0 %}
+                <p style="font-size:13px; color:var(--text-dim);">
+                    {{ results.duplicates.count }} duplicate row(s) found (excluding first occurrence).
+                </p>
+            {% else %}
+                <p class="no-issues">✅ No duplicate rows found</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="margin-top: 30px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+        <a href="{{ url_for('clean_data', file_id=file_id) }}" class="btn-clean">🧹 Clean This Data</a>
+        <a href="{{ url_for('issues', file_id=file_id) }}" class="btn-issues">⚠️ View Issues</a>
+        <a href="{{ url_for('upload_history') }}" class="back-link">← Back to Upload History</a>
+    </div>
+</div>
+
+<script>
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.color = '#8b8fb8';
+
+    const ctx = document.getElementById('issueChart').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Duplicates', 'Null Values', 'Unknown Values', 'Outliers'],
+            datasets: [{
+                label: 'Issue Count',
+                data: [
+                    { resultsduplicatescount },
+                    { resultsnullscount },
+                    { resultsunknownscount},
+                    { resultsoutlierscount}
+                ]
+                ['#4f46e5', '#f59e0b', '#ef4444', '#10b981'],
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: { backgroundColor: '#1a1a2e', padding: 10, cornerRadius: 8 }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { precision: 0 },
+                    grid: { color: 'rgba(255,255,255,0.06)' }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,134 @@
+"""
+services/report_generator.py
+One-Click Full Pipeline: runs Analyze -> Clean -> Score -> AI Insights
+on a single file and builds a downloadable PDF summary report.
+"""
+
+import pandas as pd
+from fpdf import FPDF
+
+from services.data_quality import run_full_analysis, compute_quality_score
+from services.data_cleaner import clean_dataset
+from services.insights import generate_full_insights
+
+
+def run_full_pipeline(df: pd.DataFrame) -> dict:
+    """Runs every stage of the pipeline on the given dataframe and
+    returns everything needed for both the on-screen summary and the PDF."""
+
+    # Stage 1: Analyze
+    analysis_results = run_full_analysis(df)
+
+    # Stage 2: Quality Score
+    quality_score = compute_quality_score(analysis_results)
+
+    # Stage 3: Clean
+    clean_result = clean_dataset(df)
+    clean_df = clean_result['dataframe']
+    clean_summary = clean_result['summary']
+
+    # Stage 4: AI Insights (computed on the CLEANED data for best results)
+    insight_result = generate_full_insights(clean_df)
+
+    return {
+        'analysis': analysis_results,
+        'quality_score': quality_score,
+        'clean_summary': clean_summary,
+        'clean_dataframe': clean_df,
+        'rule_based': insight_result['rule_based'],
+        'ai_text': insight_result['ai_text']
+    }
+
+
+def build_pdf_report(file_name: str, pipeline_result: dict) -> bytes:
+    """Builds a clean, single-page-ish PDF report summarizing the full pipeline run."""
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+
+    # --- Header ---
+    pdf.set_fill_color(26, 26, 46)  # navy
+    pdf.rect(0, 0, 210, 28, 'F')
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font('Helvetica', 'B', 18)
+    pdf.set_xy(10, 8)
+    pdf.cell(0, 10, 'DataSense AI - Full Analysis Report', ln=True)
+    pdf.set_font('Helvetica', '', 10)
+    pdf.set_xy(10, 18)
+    pdf.cell(0, 6, f'File: {file_name}', ln=True)
+
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(16)
+
+    # --- Data Quality Score ---
+    score = pipeline_result['quality_score']
+    pdf.set_font('Helvetica', 'B', 14)
+    pdf.cell(0, 10, 'Data Quality Score', ln=True)
+    pdf.set_font('Helvetica', 'B', 28)
+    grade_colors = {
+        'A': (16, 185, 129), 'B': (79, 70, 229), 'C': (245, 158, 11),
+        'D': (249, 115, 22), 'F': (239, 68, 68)
+    }
+    r, g, b = grade_colors.get(score['grade'], (100, 100, 100))
+    pdf.set_text_color(r, g, b)
+    pdf.cell(30, 14, f"{score['grade']}", ln=False)
+    pdf.set_font('Helvetica', '', 12)
+    pdf.set_text_color(0, 0, 0)
+    pdf.cell(0, 14, f"  {score['score']} / 100", ln=True)
+    pdf.ln(4)
+
+    # --- Analysis Summary ---
+    analysis = pipeline_result['analysis']
+    pdf.set_font('Helvetica', 'B', 13)
+    pdf.cell(0, 8, 'Data Quality Analysis', ln=True)
+    pdf.set_font('Helvetica', '', 11)
+    pdf.cell(0, 7, f"Total Records: {analysis['total_records']}", ln=True)
+    pdf.cell(0, 7, f"Duplicates Found: {analysis['duplicates']['count']}", ln=True)
+    pdf.cell(0, 7, f"Null Values Found: {analysis['nulls']['count']}", ln=True)
+    pdf.cell(0, 7, f"Unknown Values Found: {analysis['unknowns']['count']}", ln=True)
+    pdf.cell(0, 7, f"Outliers Found: {analysis['outliers']['count']}", ln=True)
+    pdf.ln(4)
+
+    # --- Cleaning Summary ---
+    clean = pipeline_result['clean_summary']
+    pdf.set_font('Helvetica', 'B', 13)
+    pdf.cell(0, 8, 'Cleaning Summary', ln=True)
+    pdf.set_font('Helvetica', '', 11)
+    pdf.cell(0, 7, f"Original Records: {clean['original_record_count']}", ln=True)
+    pdf.cell(0, 7, f"Clean Records: {clean['clean_record_count']}", ln=True)
+    pdf.cell(0, 7, f"Duplicates Removed: {clean['duplicates_removed']}", ln=True)
+    pdf.cell(0, 7, f"Nulls Fixed: {clean['nulls_fixed']}", ln=True)
+    pdf.cell(0, 7, f"Unknowns Fixed: {clean['unknowns_fixed']}", ln=True)
+    pdf.cell(0, 7, f"Outliers Capped: {clean['outliers_capped']}", ln=True)
+    pdf.ln(4)
+
+    # --- AI Insights ---
+    pdf.set_font('Helvetica', 'B', 13)
+    pdf.cell(0, 8, 'AI-Generated Business Insights', ln=True)
+    pdf.set_font('Helvetica', '', 11)
+    ai_text = pipeline_result['ai_text'].encode('latin-1', 'replace').decode('latin-1')
+    pdf.multi_cell(0, 7, ai_text)
+    pdf.ln(4)
+
+    # --- Numeric Summary ---
+    numeric_summary = pipeline_result['rule_based'].get('numeric_summary', {})
+    if numeric_summary:
+        pdf.set_font('Helvetica', 'B', 13)
+        pdf.cell(0, 8, 'Numeric Column Summary', ln=True)
+        pdf.set_font('Helvetica', '', 10)
+        for col, stats in numeric_summary.items():
+            col_safe = str(col).encode('latin-1', 'replace').decode('latin-1')
+            pdf.cell(0, 6, f"{col_safe}: sum={stats['sum']}, avg={stats['mean']}, min={stats['min']}, max={stats['max']}", ln=True)
+        pdf.ln(2)
+
+    # --- Footer ---
+    pdf.set_y(-15)
+    pdf.set_font('Helvetica', 'I', 8)
+    pdf.set_text_color(150, 150, 150)
+    pdf.cell(0, 10, 'Generated by DataSense AI - Automated Data Analytics Platform', align='C')
+
+    pdf_output = pdf.output()
+    if isinstance(pdf_output, str):
+        # Older fpdf/fpdf2 versions return a latin-1 string instead of bytes
+        return pdf_output.encode('latin-1')
+    return bytes(pdf_output)

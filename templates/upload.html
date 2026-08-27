@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataSense AI - Upload Dataset</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --navy: #0b0b1e;
+        --surface: #16162f;
+        --surface-2: #1d1d3d;
+        --indigo: #4f46e5;
+        --violet: #7c3aed;
+        --pink: #ec4899;
+        --text: #e8e9f5;
+        --text-dim: #8b8fb8;
+        --border: rgba(255, 255, 255, 0.09);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background: radial-gradient(ellipse 90% 60% at 20% 0%, #241d55 0%, var(--navy) 55%);
+        min-height: 100vh;
+        color: var(--text);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+
+    /* ===== Floating insight chips (ambient background) ===== */
+    .chip-field {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+    }
+
+    .chip {
+        position: absolute;
+        bottom: -60px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 13px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.045);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        backdrop-filter: blur(6px);
+        font-size: 11.5px;
+        color: #c7cbf0;
+        white-space: nowrap;
+        animation: floatChip linear infinite;
+    }
+
+    @keyframes floatChip {
+        0% { transform: translateY(0) scale(0.92); opacity: 0; }
+        8% { opacity: 0.8; }
+        90% { opacity: 0.8; }
+        100% { transform: translateY(-115vh) scale(1); opacity: 0; }
+    }
+
+    .chip1 { left: 6%;  animation-duration: 20s; animation-delay: 0s; }
+    .chip2 { left: 22%; animation-duration: 24s; animation-delay: 4s; }
+    .chip3 { left: 40%; animation-duration: 19s; animation-delay: 8s; }
+    .chip4 { left: 58%; animation-duration: 25s; animation-delay: 2s; }
+    .chip5 { left: 74%; animation-duration: 21s; animation-delay: 10s; }
+    .chip6 { left: 88%; animation-duration: 23s; animation-delay: 5s; }
+
+    @media (max-width: 600px) {
+        .chip-field { display: none; }
+    }
+
+    /* ===== Navbar ===== */
+    .navbar {
+        background: rgba(22, 22, 47, 0.7);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--border);
+        padding: 16px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .navbar-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .logo-mark {
+        width: 32px; height: 32px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--indigo), var(--pink));
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700; font-size: 15px;
+        box-shadow: 0 0 20px rgba(124, 58, 237, 0.4);
+    }
+
+    .navbar h2 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 18px; font-weight: 600; letter-spacing: -0.2px;
+    }
+
+    .nav-links a {
+        color: var(--text-dim);
+        text-decoration: none;
+        font-size: 13.5px;
+        margin-left: 22px;
+        transition: color 0.15s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    /* ===== Container / header ===== */
+    .container {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 50px 24px 70px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .page-header {
+        position: relative;
+        margin-bottom: 32px;
+        padding: 10px 0;
+    }
+
+    .aurora {
+        position: absolute;
+        top: -100px; left: -60px; right: -60px;
+        height: 320px;
+        z-index: -1;
+        overflow: hidden;
+        pointer-events: none;
+        filter: blur(55px);
+        opacity: 0.5;
+    }
+
+    .aurora-blob {
+        position: absolute;
+        border-radius: 50%;
+        mix-blend-mode: screen;
+    }
+
+    .blob1 { width: 320px; height: 320px; background: radial-gradient(circle, var(--indigo), transparent 70%); top: -70px; left: 10%; animation: blobDrift1 15s ease-in-out infinite; }
+    .blob2 { width: 280px; height: 280px; background: radial-gradient(circle, var(--pink), transparent 70%); top: -40px; right: 15%; animation: blobDrift2 18s ease-in-out infinite; }
+
+    @keyframes blobDrift1 { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(40px, 25px) scale(1.15); } }
+    @keyframes blobDrift2 { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-35px, 20px) scale(0.9); } }
+
+    .page-header h1 {
+        position: relative;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 30px;
+        letter-spacing: -0.6px;
+        margin-bottom: 8px;
+        text-shadow: 0 0 40px rgba(124, 58, 237, 0.35);
+    }
+
+    .page-header p {
+        position: relative;
+        color: var(--text-dim);
+        font-size: 14px;
+    }
+
+    /* ===== Alert ===== */
+    .alert {
+        background: rgba(239, 68, 68, 0.12);
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        color: #fca5a5;
+        font-size: 13px;
+        padding: 11px 14px;
+        border-radius: 9px;
+        margin-bottom: 20px;
+        display: flex; align-items: center; gap: 8px;
+    }
+
+    /* ===== Upload card ===== */
+    .upload-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 32px;
+        box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.5);
+    }
+
+    .drop-zone {
+        border: 2px dashed rgba(255,255,255,0.15);
+        border-radius: 16px;
+        padding: 50px 24px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+        position: relative;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+        border-color: var(--indigo);
+        background: rgba(79, 70, 229, 0.06);
+    }
+
+    .drop-icon {
+        width: 60px; height: 60px;
+        border-radius: 16px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 26px;
+        margin: 0 auto 18px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .drop-zone:hover .drop-icon, .drop-zone.dragover .drop-icon {
+        transform: translateY(-3px);
+        box-shadow: 0 0 24px rgba(79, 70, 229, 0.4);
+    }
+
+    .drop-zone p.main-text {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 6px;
+    }
+
+    .drop-zone p.sub-text {
+        font-size: 12.5px;
+        color: var(--text-dim);
+    }
+
+    #fileInput { display: none; }
+
+    #fileName {
+        margin-top: 16px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12.5px;
+        color: #a5b4fc;
+        text-align: center;
+    }
+
+    .btn-upload {
+        width: 100%;
+        background: linear-gradient(135deg, var(--indigo), var(--violet));
+        color: white;
+        border: none;
+        padding: 15px;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 22px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35);
+        transition: transform 0.12s, box-shadow 0.12s, opacity 0.15s;
+    }
+
+    .btn-upload::after {
+        content: '';
+        position: absolute;
+        top: 0; left: -60%;
+        width: 40%; height: 100%;
+        background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
+        transform: skewX(-20deg);
+        animation: shimmerSweep 3s ease-in-out infinite;
+    }
+
+    @keyframes shimmerSweep {
+        0% { left: -60%; }
+        50%, 100% { left: 130%; }
+    }
+
+    .btn-upload:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(79, 70, 229, 0.45); }
+    .btn-upload:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+    /* ===== Success view ===== */
+    .success-box {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(52, 211, 153, 0.3);
+        color: #6ee7b7;
+        padding: 16px 18px;
+        border-radius: 12px;
+        margin-bottom: 22px;
+        font-size: 14px;
+    }
+
+    .success-box strong { color: #a7f3d0; }
+
+    .stats-row {
+        display: flex;
+        gap: 14px;
+        margin-bottom: 26px;
+    }
+
+    .stat-card {
+        flex: 1;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+    }
+
+    .stat-card .num {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--text);
+    }
+
+    .stat-card .label {
+        font-size: 11.5px;
+        color: var(--text-dim);
+        margin-top: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    h3.preview-title {
+        font-size: 15px;
+        color: var(--text);
+        margin-bottom: 14px;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        margin-bottom: 26px;
+    }
+
+    table.preview-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12.5px;
+    }
+
+    table.preview-table th, table.preview-table td {
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        padding: 9px 14px;
+        text-align: left;
+        white-space: nowrap;
+        color: var(--text);
+    }
+
+    table.preview-table th {
+        background: var(--surface-2);
+        color: var(--text-dim);
+        font-weight: 600;
+    }
+
+    .btn-secondary {
+        display: inline-block;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        text-decoration: none;
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        transition: background 0.15s, border-color 0.15s;
+    }
+
+    .btn-secondary:hover {
+        background: #26264a;
+        border-color: rgba(255,255,255,0.2);
+    }
+
+    @media (max-width: 600px) {
+        .navbar { padding: 14px 18px; }
+        .container { padding: 34px 16px 50px; }
+        .page-header h1 { font-size: 24px; }
+        .upload-card { padding: 22px; }
+    }
+</style>
+</head>
+<body>
+
+<div class="chip-field" aria-hidden="true">
+    <div class="chip chip1">📈 Forecast +14%</div>
+    <div class="chip chip2">🔍 Anomaly flagged</div>
+    <div class="chip chip3">✅ Data cleaned</div>
+    <div class="chip chip4">🎯 Segment: Champion</div>
+    <div class="chip chip5">🔒 PII masked</div>
+    <div class="chip chip6">🏆 Quality Score: A</div>
+</div>
+
+<div class="navbar">
+    <div class="navbar-left">
+        <div class="logo-mark">D</div>
+        <h2>DataSense AI</h2>
+    </div>
+    <div class="nav-links">
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('upload_history') }}">History</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for msg in messages %}
+                <div class="alert">⚠ {{ msg }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if not success %}
+        <div class="page-header">
+            <div class="aurora" aria-hidden="true">
+                <div class="aurora-blob blob1"></div>
+                <div class="aurora-blob blob2"></div>
+            </div>
+            <h1>Upload Dataset</h1>
+            <p>Upload a CSV or Excel file to begin analysis</p>
+        </div>
+
+        <div class="upload-card">
+            <form id="uploadForm" method="POST" enctype="multipart/form-data">
+                <div class="drop-zone" id="dropZone">
+                    <div class="drop-icon">📂</div>
+                    <p class="main-text">Drag &amp; drop your file here</p>
+                    <p class="sub-text">or click to browse — .csv, .xlsx, .xls (max 10MB)</p>
+                    <input type="file" id="fileInput" name="dataset" accept=".csv,.xlsx,.xls">
+                </div>
+                <p id="fileName"></p>
+                <button type="submit" class="btn-upload" id="submitBtn" disabled>Upload File</button>
+            </form>
+        </div>
+
+    {% else %}
+        <div class="page-header">
+            <h1>Upload Complete</h1>
+            <p>Your dataset is ready for analysis</p>
+        </div>
+
+        <div class="success-box">
+            ✅ <strong>{{ filename }}</strong> uploaded and validated successfully
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="num">{{ record_count }}</div>
+                <div class="label">Rows</div>
+            </div>
+            <div class="stat-card">
+                <div class="num">{{ column_count }}</div>
+                <div class="label">Columns</div>
+            </div>
+        </div>
+
+        <h3 class="preview-title">Preview (first 10 rows)</h3>
+        <div class="table-wrapper">
+            {{ preview_html | safe }}
+        </div>
+
+        <a href="{{ url_for('upload') }}" class="btn-secondary">Upload Another File</a>
+    {% endif %}
+
+</div>
+
+<script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const fileNameEl = document.getElementById('fileName');
+    const submitBtn = document.getElementById('submitBtn');
+
+    if (dropZone) {
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            fileInput.files = e.dataTransfer.files;
+            handleFile();
+        });
+
+        fileInput.addEventListener('change', handleFile);
+
+        function handleFile() {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const validExt = ['csv', 'xlsx', 'xls'];
+            const ext = file.name.split('.').pop().toLowerCase();
+
+            if (!validExt.includes(ext)) {
+                alert('Only .csv, .xlsx, .xls files are allowed');
+                fileInput.value = '';
+                submitBtn.disabled = true;
+                fileNameEl.textContent = '';
+                return;
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File exceeds 10MB limit');
+                fileInput.value = '';
+                submitBtn.disabled = true;
+                fileNameEl.textContent = '';
+                return;
+            }
+
+            fileNameEl.textContent = `Selected: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+            submitBtn.disabled = false;
+        }
+
+        document.getElementById('uploadForm').addEventListener('submit', () => {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Uploading...';
+        });
+    }
+</script>
+
+</body>
+</html>

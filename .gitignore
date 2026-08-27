@@ -1,0 +1,20 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Editor
+.vscode/
+
+# Generated / uploaded data - these fill up with real user files during use
+# and don't belong in git. Keep a couple of small sample datasets elsewhere
+# (e.g. a /samples folder) if you want demo data available on GitHub.
+uploads/
+cleaned_data/
+media_uploads/
+reports/

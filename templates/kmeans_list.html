@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataSense AI - K-Means Segmentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg: #0b0b1e;
+        --surface: #16162f;
+        --surface-2: #1d1d3d;
+        --border: rgba(255, 255, 255, 0.09);
+        --text: #e8e9f5;
+        --text-dim: #8b8fb8;
+        --text-dimmer: #5c5e6b;
+
+        --indigo: #4f46e5;
+        --violet: #7c3aed;
+        --pink: #ec4899;
+        --emerald: #10b981;
+        --amber: #f59e0b;
+        --rose: #f43f5e;
+        --plum: #a855f7;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--bg); }
+
+    body {
+        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+        background: radial-gradient(ellipse 90% 60% at 20% 0%, #241d55 0%, var(--bg) 55%);
+        color: var(--text);
+        min-height: 100vh;
+        font-variant-numeric: tabular-nums;
+        position: relative;
+        overflow-x: hidden;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+
+    a { outline-offset: 3px; }
+    a:focus-visible { outline: 2px solid var(--violet); }
+
+    /* ===== Ambient floating chips ===== */
+    .chip-field { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+
+    .chip {
+        position: absolute;
+        bottom: -60px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 13px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.045);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        backdrop-filter: blur(6px);
+        font-size: 11.5px;
+        color: #c7cbf0;
+        white-space: nowrap;
+        animation: floatChip linear infinite;
+    }
+
+    @keyframes floatChip {
+        0% { transform: translateY(0) scale(0.92); opacity: 0; }
+        8% { opacity: 0.8; }
+        90% { opacity: 0.8; }
+        100% { transform: translateY(-115vh) scale(1); opacity: 0; }
+    }
+
+    .chip1 { left: 5%;  animation-duration: 20s; animation-delay: 0s; }
+    .chip2 { left: 18%; animation-duration: 24s; animation-delay: 5s; }
+    .chip3 { left: 33%; animation-duration: 19s; animation-delay: 9s; }
+    .chip4 { left: 48%; animation-duration: 25s; animation-delay: 2s; }
+    .chip5 { left: 63%; animation-duration: 21s; animation-delay: 11s; }
+    .chip6 { left: 78%; animation-duration: 23s; animation-delay: 6s; }
+    .chip7 { left: 90%; animation-duration: 22s; animation-delay: 13s; }
+
+    @media (max-width: 600px) { .chip-field { display: none; } }
+
+    .navbar {
+        background: rgba(11, 11, 30, 0.75);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--border);
+        padding: 16px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .navbar-left { display: flex; align-items: center; gap: 10px; }
+
+    .brand-mark {
+        width: 32px; height: 32px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--indigo), var(--pink));
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700; font-size: 15px; color: #fff;
+        box-shadow: 0 0 20px rgba(124, 58, 237, 0.4);
+        flex-shrink: 0;
+    }
+
+    .navbar h2 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 600; letter-spacing: -0.2px; }
+
+    .nav-links a {
+        color: var(--text-dim);
+        text-decoration: none;
+        font-size: 13.5px;
+        font-weight: 600;
+        margin-left: 22px;
+        transition: color 0.15s ease;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    .hero {
+        position: relative;
+        background: linear-gradient(120deg, #4c1d95 0%, var(--violet) 50%, var(--plum) 100%);
+        padding: 44px 30px 64px;
+        color: #fff;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    .hero::after {
+        content: '';
+        position: absolute; inset: 0;
+        background: radial-gradient(circle at 80% 0%, rgba(255,255,255,0.16), transparent 55%);
+        pointer-events: none;
+    }
+
+    .hero-inner { max-width: 800px; margin: 0 auto; position: relative; }
+    .hero h1 { font-family: 'Space Grotesk', sans-serif; font-size: 27px; font-weight: 700; letter-spacing: -0.4px; margin-bottom: 6px; }
+    .hero p { font-size: 14px; opacity: 0.9; }
+
+    .container {
+        max-width: 800px;
+        margin: -35px auto 40px;
+        padding: 0 20px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .file-row {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 18px 22px;
+        box-shadow: 0 20px 45px -28px rgba(0,0,0,0.7);
+        margin-bottom: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        transition: transform 0.18s ease, border-color 0.18s ease;
+    }
+    .file-row:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.16); }
+
+    .file-info { display: flex; align-items: center; gap: 12px; }
+
+    .file-icon {
+        font-size: 18px;
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 38px; height: 38px;
+        background: rgba(168, 85, 247, 0.18);
+        border-radius: 11px;
+        flex-shrink: 0;
+    }
+
+    .file-name { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; color: var(--text); }
+    .file-meta { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+    .action-btn {
+        background: rgba(168, 85, 247, 0.18);
+        color: #d8b4fe;
+        text-decoration: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 13px;
+        transition: background 0.15s ease, color 0.15s ease;
+        white-space: nowrap;
+    }
+    .action-btn:hover { background: var(--plum); color: #fff; }
+    .action-btn:focus-visible { outline: 2px solid var(--plum); }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-dim);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+    }
+    .empty-state a { color: #a5b4fc; font-weight: 600; text-decoration: none; }
+    .empty-state a:hover { text-decoration: underline; }
+
+    @media (max-width: 560px) {
+        .navbar { padding: 14px 18px; }
+        .nav-links a { margin-left: 14px; font-size: 12px; }
+        .hero { padding: 34px 18px 54px; }
+        .hero h1 { font-size: 22px; }
+        .container { padding: 0 14px; }
+    }
+</style>
+</head>
+<body>
+
+<div class="chip-field" aria-hidden="true">
+    <div class="chip chip1">🧠 Clusters formed</div>
+    <div class="chip chip2">📍 Centroids placed</div>
+    <div class="chip chip3">🎯 Segment: Champion</div>
+    <div class="chip chip4">📊 Elbow method</div>
+    <div class="chip chip5">✨ ML powered</div>
+    <div class="chip chip6">🔬 scikit-learn</div>
+    <div class="chip chip7">🏆 Silhouette score</div>
+</div>
+
+<div class="navbar">
+    <div class="navbar-left">
+        <span class="brand-mark">D</span>
+        <h2>DataSense AI</h2>
+    </div>
+    <div class="nav-links">
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('upload_history') }}">History</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</div>
+
+<div class="hero">
+    <div class="hero-inner">
+        <h1>🧠 K-Means Segmentation</h1>
+        <p>Pick a file for ML-based customer clustering (scikit-learn)</p>
+    </div>
+</div>
+
+<div class="container">
+    {% if files %}
+        {% for file in files %}
+        <div class="file-row">
+            <div class="file-info">
+                <span class="file-icon">📄</span>
+                <div>
+                    <div class="file-name">{{ file.file_name }}</div>
+                    <div class="file-meta">{{ file.record_count }} rows · {{ file.column_count }} columns</div>
+                </div>
+            </div>
+            <a href="{{ url_for('kmeans', file_id=file.file_id) }}" class="action-btn">🧠 Run Clustering</a>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <p>No files uploaded yet.</p>
+            <p style="margin-top:8px;"><a href="{{ url_for('upload') }}">Upload your first dataset →</a></p>
+        </div>
+    {% endif %}
+</div>
+
+</body>
+</html>

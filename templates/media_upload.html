@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataSense AI - Analyze Image or Video</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg: #0b0b1e;
+        --surface: #16162f;
+        --surface-2: #1d1d3d;
+        --border: rgba(255, 255, 255, 0.09);
+        --text: #e8e9f5;
+        --text-dim: #8b8fb8;
+        --text-dimmer: #5c5e6b;
+
+        --indigo: #4f46e5;
+        --violet: #7c3aed;
+        --pink: #ec4899;
+        --teal: #22d3ee;
+        --rose: #f43f5e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--bg); }
+
+    body {
+        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+        background: radial-gradient(ellipse 90% 60% at 20% 0%, #241d55 0%, var(--bg) 55%);
+        color: var(--text);
+        min-height: 100vh;
+        font-variant-numeric: tabular-nums;
+        position: relative;
+        overflow-x: hidden;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+
+    a { outline-offset: 3px; }
+    a:focus-visible, button:focus-visible { outline: 2px solid var(--indigo); }
+
+    /* ===== Ambient floating chips ===== */
+    .chip-field { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+
+    .chip {
+        position: absolute;
+        bottom: -60px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 13px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.045);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        backdrop-filter: blur(6px);
+        font-size: 11.5px;
+        color: #c7cbf0;
+        white-space: nowrap;
+        animation: floatChip linear infinite;
+    }
+
+    @keyframes floatChip {
+        0% { transform: translateY(0) scale(0.92); opacity: 0; }
+        8% { opacity: 0.8; }
+        90% { opacity: 0.8; }
+        100% { transform: translateY(-115vh) scale(1); opacity: 0; }
+    }
+
+    .chip1 { left: 5%;  animation-duration: 20s; animation-delay: 0s; }
+    .chip2 { left: 18%; animation-duration: 24s; animation-delay: 5s; }
+    .chip3 { left: 33%; animation-duration: 19s; animation-delay: 9s; }
+    .chip4 { left: 48%; animation-duration: 25s; animation-delay: 2s; }
+    .chip5 { left: 63%; animation-duration: 21s; animation-delay: 11s; }
+    .chip6 { left: 78%; animation-duration: 23s; animation-delay: 6s; }
+    .chip7 { left: 90%; animation-duration: 22s; animation-delay: 13s; }
+
+    @media (max-width: 600px) { .chip-field { display: none; } }
+
+    .navbar { background: rgba(11, 11, 30, 0.75); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border);
+        padding: 16px 30px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-mark { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, var(--indigo), var(--pink));
+        display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700; font-size: 15px; color: #fff; box-shadow: 0 0 20px rgba(124, 58, 237, 0.4); flex-shrink: 0; }
+    .navbar h2 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 600; letter-spacing: -0.2px; }
+    .nav-links a { color: var(--text-dim); text-decoration: none; font-size: 13.5px; font-weight: 600; margin-left: 22px; transition: color 0.15s ease; }
+    .nav-links a:hover { color: var(--text); }
+
+    .container { max-width: 640px; margin: 60px auto; padding: 0 24px; position: relative; z-index: 1; }
+    .container h1 { font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.4px; margin-bottom: 8px; }
+    .container > p { font-size: 14px; color: var(--text-dim); margin-bottom: 28px; }
+
+    .flash { background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.3); color: #ff8fa3;
+        border-radius: 12px; padding: 12px 18px; font-size: 13px; margin-bottom: 20px; }
+
+    .dropzone { border: 1.5px dashed rgba(255,255,255,0.14); border-radius: 20px; background: var(--surface);
+        padding: 56px 24px; text-align: center; cursor: pointer; transition: border-color 0.2s ease, background 0.2s ease; }
+    .dropzone:hover, .dropzone.drag-over { border-color: var(--indigo); background: var(--surface-2); }
+    .dz-icon { width: 52px; height: 52px; margin: 0 auto 16px; border-radius: 15px;
+        background: linear-gradient(135deg, var(--indigo), var(--violet)); display: flex; align-items: center; justify-content: center; font-size: 22px; }
+    .dropzone h3 { font-family: 'Space Grotesk', sans-serif; font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    .dropzone p { font-size: 13px; color: var(--text-dim); }
+    .dropzone .filename { font-size: 13px; color: var(--teal); font-weight: 600; margin-top: 12px; }
+    .dropzone .formats { font-size: 11px; color: var(--text-dimmer); margin-top: 14px; font-weight: 600; letter-spacing: 0.3px; }
+    .dropzone input[type="file"] { display: none; }
+
+    .btn-submit { width: 100%; margin-top: 20px; background: linear-gradient(135deg, var(--indigo), var(--violet));
+        color: #fff; border: none; font-size: 14px; font-weight: 700; padding: 14px; border-radius: 12px; cursor: pointer;
+        box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3); transition: transform 0.12s, box-shadow 0.12s; }
+    .btn-submit:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(79, 70, 229, 0.4); }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<div class="chip-field" aria-hidden="true">
+    <div class="chip chip1">📊 Ready to analyze</div>
+    <div class="chip chip2">🖼️ Images supported</div>
+    <div class="chip chip3">🎬 Videos supported</div>
+    <div class="chip chip4">✨ Instant results</div>
+    <div class="chip chip5">🔒 Processed locally</div>
+    <div class="chip chip6">📐 Auto-detect resolution</div>
+    <div class="chip chip7">🎯 Drop to start</div>
+</div>
+
+<div class="navbar">
+    <div class="brand">
+        <span class="brand-mark">D</span>
+        <h2>DataSense AI</h2>
+    </div>
+    <div class="nav-links">
+        <a href="{{ url_for('media_list') }}">Media Library</a>
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <h1>Analyze Image or Video</h1>
+    <p>Upload a file and DataSense AI will break down brightness, color, sharpness, motion, and scene changes automatically.</p>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="flash">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST" enctype="multipart/form-data" id="uploadForm">
+        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Choose an image or video file">
+            <div class="dz-icon">📊</div>
+            <h3 id="dzTitle">Drop a file here or click to browse</h3>
+            <p>Analysis starts automatically after upload</p>
+            <div class="filename" id="fileNameDisplay"></div>
+            <div class="formats">JPG · PNG · GIF · WEBP &nbsp;·&nbsp; MP4 · WEBM · MOV &nbsp;·&nbsp; up to 200MB</div>
+            <input type="file" name="media" id="fileInput" accept="image/*,video/*" required>
+        </div>
+        <button type="submit" class="btn-submit" id="submitBtn" disabled>Upload &amp; Analyze</button>
+    </form>
+</div>
+
+<script>
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const submitBtn = document.getElementById('submitBtn');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+    const dzTitle = document.getElementById('dzTitle');
+    const form = document.getElementById('uploadForm');
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } });
+    dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+    dropzone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropzone.classList.remove('drag-over');
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            updateSelection();
+        }
+    });
+    fileInput.addEventListener('change', updateSelection);
+
+    function updateSelection() {
+        if (fileInput.files.length) {
+            fileNameDisplay.textContent = fileInput.files[0].name;
+            dzTitle.textContent = 'Ready to analyze';
+            submitBtn.disabled = false;
+        }
+    }
+
+    form.addEventListener('submit', () => {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Analyzing… this can take a moment for video';
+    });
+</script>
+
+</body>
+</html>

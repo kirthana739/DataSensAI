@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataSense AI - Processing Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg: #0b0b1e;
+        --surface: #16162f;
+        --surface-2: #1d1d3d;
+        --border: rgba(255, 255, 255, 0.09);
+        --text: #e8e9f5;
+        --text-dim: #8b8fb8;
+        --text-dimmer: #5c5e6b;
+
+        --indigo: #4f46e5;
+        --violet: #7c3aed;
+        --pink: #ec4899;
+        --emerald: #10b981;
+        --amber: #f59e0b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: var(--bg); }
+
+    body {
+        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+        background: radial-gradient(ellipse 90% 60% at 20% 0%, #241d55 0%, var(--bg) 55%);
+        min-height: 100vh;
+        color: var(--text);
+        font-variant-numeric: tabular-nums;
+        position: relative;
+        overflow-x: hidden;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+
+    a { outline-offset: 3px; }
+    a:focus-visible { outline: 2px solid var(--indigo); }
+
+    /* ===== Ambient floating chips ===== */
+    .chip-field { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+
+    .chip {
+        position: absolute;
+        bottom: -60px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 13px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.045);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        backdrop-filter: blur(6px);
+        font-size: 11.5px;
+        color: #c7cbf0;
+        white-space: nowrap;
+        animation: floatChip linear infinite;
+    }
+
+    @keyframes floatChip {
+        0% { transform: translateY(0) scale(0.92); opacity: 0; }
+        8% { opacity: 0.8; }
+        90% { opacity: 0.8; }
+        100% { transform: translateY(-115vh) scale(1); opacity: 0; }
+    }
+
+    .chip1 { left: 5%;  animation-duration: 20s; animation-delay: 0s; }
+    .chip2 { left: 18%; animation-duration: 24s; animation-delay: 5s; }
+    .chip3 { left: 33%; animation-duration: 19s; animation-delay: 9s; }
+    .chip4 { left: 48%; animation-duration: 25s; animation-delay: 2s; }
+    .chip5 { left: 63%; animation-duration: 21s; animation-delay: 11s; }
+    .chip6 { left: 78%; animation-duration: 23s; animation-delay: 6s; }
+    .chip7 { left: 90%; animation-duration: 22s; animation-delay: 13s; }
+
+    @media (max-width: 600px) { .chip-field { display: none; } }
+
+    .navbar {
+        background: rgba(11, 11, 30, 0.75);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--border);
+        padding: 16px 30px;
+        display: flex; justify-content: space-between; align-items: center;
+        position: sticky; top: 0; z-index: 10;
+    }
+    .navbar-left { display: flex; align-items: center; gap: 10px; }
+    .brand-mark {
+        width: 32px; height: 32px; border-radius: 8px;
+        background: linear-gradient(135deg, var(--indigo), var(--pink));
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700; font-size: 15px; color: #fff;
+        box-shadow: 0 0 20px rgba(124, 58, 237, 0.4);
+        flex-shrink: 0;
+    }
+    .navbar h2 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 600; letter-spacing: -0.2px; }
+    .nav-links a {
+        color: var(--text-dim); text-decoration: none; font-size: 13.5px;
+        font-weight: 600; margin-left: 22px; transition: color 0.15s ease;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    .container { max-width: 760px; margin: 60px auto; padding: 0 20px; position: relative; z-index: 1; }
+
+    .page-title { text-align: center; margin-bottom: 50px; }
+    .page-title h1 { font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.4px; margin-bottom: 8px; }
+    .page-title p { color: var(--text-dim); font-size: 14px; }
+    .page-title strong { color: #a5b4fc; }
+
+    /* ===== Stepper ===== */
+    .stepper {
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+        margin-bottom: 50px;
+    }
+
+    .stepper::before {
+        content: '';
+        position: absolute;
+        top: 22px;
+        left: 22px;
+        right: 22px;
+        height: 3px;
+        background: rgba(255,255,255,0.08);
+        z-index: 0;
+    }
+
+    .stepper-progress {
+        position: absolute;
+        top: 22px;
+        left: 22px;
+        height: 3px;
+        width: 0%;
+        background: linear-gradient(90deg, var(--indigo), var(--pink));
+        z-index: 1;
+        transition: width 0.6s ease;
+    }
+
+    .step {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+    }
+
+    .step-circle {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: var(--surface-2);
+        border: 2px solid rgba(255,255,255,0.12);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        transition: all 0.4s ease;
+    }
+
+    .step.active .step-circle {
+        border-color: var(--indigo);
+        background: rgba(79,70,229,0.2);
+        box-shadow: 0 0 0 6px rgba(79,70,229,0.12);
+        animation: stepPulse 1s ease-in-out infinite;
+    }
+
+    .step.done .step-circle {
+        background: linear-gradient(135deg, var(--emerald), #059669);
+        border-color: var(--emerald);
+    }
+
+    @keyframes stepPulse {
+        0%, 100% { box-shadow: 0 0 0 6px rgba(79,70,229,0.12); }
+        50% { box-shadow: 0 0 0 10px rgba(79,70,229,0.05); }
+    }
+
+    .step-label {
+        font-size: 11.5px;
+        color: var(--text-dim);
+        text-align: center;
+        max-width: 80px;
+    }
+
+    .step.active .step-label, .step.done .step-label {
+        color: var(--text);
+        font-weight: 600;
+    }
+
+    /* ===== Results (hidden until done) ===== */
+    .results {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.6s ease, transform 0.6s ease;
+        pointer-events: none;
+    }
+
+    .results.show {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+
+    .score-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 26px;
+        display: flex;
+        align-items: center;
+        gap: 22px;
+        margin-bottom: 20px;
+        box-shadow: 0 20px 45px -28px rgba(0,0,0,0.7);
+    }
+
+    .score-badge {
+        width: 74px; height: 74px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 30px; font-weight: 700; color: white; flex-shrink: 0;
+    }
+    .score-badge.grade-A { background: linear-gradient(135deg, var(--emerald), #059669); }
+    .score-badge.grade-B { background: linear-gradient(135deg, var(--indigo), #4338ca); }
+    .score-badge.grade-C { background: linear-gradient(135deg, var(--amber), #d97706); }
+    .score-badge.grade-D { background: linear-gradient(135deg, #f97316, #ea580c); }
+    .score-badge.grade-F { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+    .score-number { font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; }
+    .score-number span { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 400; color: var(--text-dim); }
+    .score-label { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+
+    .summary-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        box-shadow: 0 20px 45px -28px rgba(0,0,0,0.7);
+    }
+    .summary-card .num { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: #a5b4fc; }
+    .summary-card .lbl { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+
+    .insight-card {
+        background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+        white-space: pre-wrap;
+        font-size: 14px;
+        line-height: 1.7;
+        color: var(--text-dim);
+        box-shadow: 0 20px 45px -28px rgba(0,0,0,0.7);
+    }
+    .insight-card h3 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 15px; font-weight: 600; margin-bottom: 14px; color: var(--text);
+        display: flex; align-items: center; gap: 9px;
+    }
+    .insight-card h3::before {
+        content: ''; width: 8px; height: 8px; border-radius: 50%;
+        background: var(--violet); box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.18);
+        display: inline-block; flex-shrink: 0;
+    }
+
+    .action-row {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+
+    .btn-download {
+        flex: 1;
+        min-width: 220px;
+        background: linear-gradient(135deg, var(--indigo), var(--violet));
+        color: white;
+        text-decoration: none;
+        padding: 16px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 15px;
+        text-align: center;
+        box-shadow: 0 10px 24px rgba(79,70,229,0.35);
+        transition: transform 0.12s, box-shadow 0.12s;
+    }
+    .btn-download:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(79,70,229,0.45); }
+
+    .btn-secondary {
+        flex: 1;
+        min-width: 160px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        text-decoration: none;
+        padding: 16px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 14px;
+        text-align: center;
+        transition: border-color 0.15s ease;
+    }
+    .btn-secondary:hover { border-color: var(--indigo); }
+
+    @media (max-width: 600px) {
+        .navbar { padding: 14px 18px; }
+        .nav-links a { margin-left: 14px; font-size: 12px; }
+        .container { padding: 0 16px; margin: 40px auto; }
+        .step-label { display: none; }
+        .summary-grid { grid-template-columns: 1fr 1fr; }
+    }
+</style>
+</head>
+<body>
+
+<div class="chip-field" aria-hidden="true">
+    <div class="chip chip1">📤 Upload received</div>
+    <div class="chip chip2">🔍 Analyzing structure</div>
+    <div class="chip chip3">🧹 Cleaning data</div>
+    <div class="chip chip4">🏆 Scoring quality</div>
+    <div class="chip chip5">🤖 Generating insights</div>
+    <div class="chip chip6">📄 Building report</div>
+    <div class="chip chip7">✅ Pipeline complete</div>
+</div>
+
+<div class="navbar">
+    <div class="navbar-left">
+        <span class="brand-mark">D</span>
+        <h2>DataSense AI</h2>
+    </div>
+    <div class="nav-links">
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('upload_history') }}">History</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="page-title">
+        <h1 id="titleText">Processing your dataset...</h1>
+        <p>Running the full pipeline on <strong>{{ file_name }}</strong></p>
+    </div>
+
+    <div class="stepper" id="stepper">
+        <div class="stepper-progress" id="stepperProgress"></div>
+        <div class="step" data-step="0"><div class="step-circle">📤</div><div class="step-label">Upload</div></div>
+        <div class="step" data-step="1"><div class="step-circle">🔍</div><div class="step-label">Analyze</div></div>
+        <div class="step" data-step="2"><div class="step-circle">🧹</div><div class="step-label">Clean</div></div>
+        <div class="step" data-step="3"><div class="step-circle">🏆</div><div class="step-label">Score</div></div>
+        <div class="step" data-step="4"><div class="step-circle">🤖</div><div class="step-label">Insights</div></div>
+        <div class="step" data-step="5"><div class="step-circle">📄</div><div class="step-label">Report</div></div>
+    </div>
+
+    <div class="results" id="results">
+        <div class="score-card">
+            <div class="score-badge grade-{{ quality_score.grade }}">{{ quality_score.grade }}</div>
+            <div>
+                <div class="score-number">{{ quality_score.score }}<span>/100</span></div>
+                <div class="score-label">Data Quality Score</div>
+            </div>
+        </div>
+
+        <div class="summary-grid">
+            <div class="summary-card"><div class="num">{{ clean_summary.duplicates_removed }}</div><div class="lbl">Duplicates Removed</div></div>
+            <div class="summary-card"><div class="num">{{ clean_summary.nulls_fixed }}</div><div class="lbl">Nulls Fixed</div></div>
+            <div class="summary-card"><div class="num">{{ clean_summary.outliers_capped }}</div><div class="lbl">Outliers Capped</div></div>
+        </div>
+
+        <div class="insight-card">
+            <h3>🤖 AI-Generated Insights</h3>
+            {{ ai_text }}
+        </div>
+
+        <div class="action-row">
+            <a href="{{ url_for('download_pipeline_report', file_id=file_id) }}" class="btn-download">⬇ Download Full Report (PDF)</a>
+            <a href="{{ url_for('pipeline_list') }}" class="btn-secondary">Run Another File</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const steps = document.querySelectorAll('.step');
+    const progressBar = document.getElementById('stepperProgress');
+    const results = document.getElementById('results');
+    const titleText = document.getElementById('titleText');
+    const totalSteps = steps.length;
+    let current = 0;
+
+    function advance() {
+        if (current > 0) {
+            steps[current - 1].classList.remove('active');
+            steps[current - 1].classList.add('done');
+        }
+        if (current < totalSteps) {
+            steps[current].classList.add('active');
+            const progressPct = (current / (totalSteps - 1)) * 100;
+            progressBar.style.width = progressPct + '%';
+            current++;
+            setTimeout(advance, 750);
+        } else {
+            progressBar.style.width = '100%';
+            titleText.textContent = 'Pipeline complete';
+            results.classList.add('show');
+        }
+    }
+
+    setTimeout(advance, 300);
+</script>
+
+</body>
+</html>

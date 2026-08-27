@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DataSense AI - Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --navy: #0b0b1e;
+        --surface: #16162f;
+        --surface-2: #1d1d3d;
+        --indigo: #4f46e5;
+        --violet: #7c3aed;
+        --pink: #ec4899;
+        --text: #e8e9f5;
+        --text-dim: #8b8fb8;
+        --border: rgba(255, 255, 255, 0.09);
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background: radial-gradient(ellipse 90% 60% at 20% 0%, #241d55 0%, var(--navy) 55%);
+        min-height: 100vh;
+        color: var(--text);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+
+    /* ===== Navbar ===== */
+    .navbar {
+        background: rgba(22, 22, 47, 0.7);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--border);
+        padding: 16px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .navbar-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .logo-mark {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--indigo), var(--pink));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 15px;
+        box-shadow: 0 0 20px rgba(124, 58, 237, 0.4);
+    }
+
+    .navbar h2 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 18px;
+        font-weight: 600;
+        letter-spacing: -0.2px;
+    }
+
+    .btn-logout {
+        background: var(--surface-2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 9px 18px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        text-decoration: none;
+        transition: border-color 0.15s, background 0.15s;
+    }
+
+    .btn-logout:hover {
+        background: #26264a;
+        border-color: rgba(255,255,255,0.2);
+    }
+
+    /* ===== Page header ===== */
+    .container {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 50px 24px 70px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .page-header {
+        position: relative;
+        margin-bottom: 40px;
+        padding: 20px 0 10px;
+    }
+
+    /* ===== Aurora / smoke glow effect ===== */
+    .aurora {
+        position: absolute;
+        top: -120px;
+        left: -80px;
+        right: -80px;
+        height: 420px;
+        z-index: -1;
+        overflow: hidden;
+        pointer-events: none;
+        filter: blur(60px);
+        opacity: 0.55;
+    }
+
+    .aurora-blob {
+        position: absolute;
+        border-radius: 50%;
+        mix-blend-mode: screen;
+    }
+
+    .blob1 {
+        width: 420px; height: 420px;
+        background: radial-gradient(circle, var(--indigo), transparent 70%);
+        top: -100px; left: 5%;
+        animation: blobDrift1 14s ease-in-out infinite;
+    }
+
+    .blob2 {
+        width: 380px; height: 380px;
+        background: radial-gradient(circle, var(--pink), transparent 70%);
+        top: -60px; left: 35%;
+        animation: blobDrift2 17s ease-in-out infinite;
+    }
+
+    .blob3 {
+        width: 400px; height: 400px;
+        background: radial-gradient(circle, var(--violet), transparent 70%);
+        top: -110px; right: 5%;
+        animation: blobDrift3 20s ease-in-out infinite;
+    }
+
+    .blob4 {
+        width: 300px; height: 300px;
+        background: radial-gradient(circle, #06b6d4, transparent 70%);
+        top: 40px; left: 55%;
+        animation: blobDrift1 22s ease-in-out infinite reverse;
+    }
+
+    @keyframes blobDrift1 {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(60px, 40px) scale(1.15); }
+    }
+    @keyframes blobDrift2 {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(-50px, 30px) scale(0.9); }
+    }
+    @keyframes blobDrift3 {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        50% { transform: translate(-40px, -30px) scale(1.1); }
+    }
+
+    .page-header h1 {
+        position: relative;
+        font-family: 'Space Grotesk', sans-serif;
+        font-weight: 700;
+        font-size: 40px;
+        letter-spacing: -1px;
+        margin-bottom: 10px;
+        background: linear-gradient(90deg, #ffffff 20%, #c7cbf0 50%, #ffffff 80%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        animation: headlineShine 5s linear infinite;
+        text-shadow: 0 0 40px rgba(124, 58, 237, 0.35);
+    }
+
+    @keyframes headlineShine {
+        to { background-position: -200% center; }
+    }
+
+    .page-header p {
+        position: relative;
+        color: var(--text-dim);
+        font-size: 15px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .aurora-blob { animation: none !important; }
+        .page-header h1 { animation: none !important; }
+        .spark { animation: none !important; }
+    }
+
+    /* ===== Glowing floating sparks ===== */
+    .spark-layer {
+        position: absolute;
+        top: -80px;
+        left: 0;
+        right: 0;
+        height: 380px;
+        z-index: -1;
+        overflow: hidden;
+        pointer-events: none;
+    }
+
+    .spark {
+        position: absolute;
+        border-radius: 50%;
+        animation: sparkFloat linear infinite;
+    }
+
+    @keyframes sparkFloat {
+        0% { transform: translateY(20px) scale(0.6); opacity: 0; }
+        15% { opacity: 1; }
+        85% { opacity: 1; }
+        100% { transform: translateY(-340px) scale(1.1); opacity: 0; }
+    }
+
+    .s1  { left: 8%;  width: 5px; height: 5px; background: #a5b4fc; box-shadow: 0 0 10px 2px #a5b4fc; animation-duration: 6s;  animation-delay: 0s; }
+    .s2  { left: 18%; width: 3px; height: 3px; background: #ec4899; box-shadow: 0 0 8px 2px #ec4899;  animation-duration: 8s;  animation-delay: 1.2s; }
+    .s3  { left: 29%; width: 4px; height: 4px; background: #34d399; box-shadow: 0 0 9px 2px #34d399;  animation-duration: 7s;  animation-delay: 2.4s; }
+    .s4  { left: 41%; width: 6px; height: 6px; background: #a5b4fc; box-shadow: 0 0 12px 3px #a5b4fc; animation-duration: 9s;  animation-delay: 0.6s; }
+    .s5  { left: 52%; width: 3px; height: 3px; background: #06b6d4; box-shadow: 0 0 8px 2px #06b6d4;  animation-duration: 6.5s; animation-delay: 3s; }
+    .s6  { left: 63%; width: 5px; height: 5px; background: #ec4899; box-shadow: 0 0 10px 2px #ec4899; animation-duration: 7.5s; animation-delay: 1.8s; }
+    .s7  { left: 74%; width: 4px; height: 4px; background: #a5b4fc; box-shadow: 0 0 9px 2px #a5b4fc;  animation-duration: 8.5s; animation-delay: 0.3s; }
+    .s8  { left: 85%; width: 3px; height: 3px; background: #34d399; box-shadow: 0 0 8px 2px #34d399;  animation-duration: 6s;  animation-delay: 2.7s; }
+    .s9  { left: 93%; width: 5px; height: 5px; background: #ec4899; box-shadow: 0 0 10px 2px #ec4899; animation-duration: 9.5s; animation-delay: 1.5s; }
+    .s10 { left: 3%;  width: 3px; height: 3px; background: #06b6d4; box-shadow: 0 0 8px 2px #06b6d4;  animation-duration: 7.2s; animation-delay: 3.6s; }
+
+    /* ===== Section labels ===== */
+    .section-label {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #6b6f9e;
+        margin: 34px 0 16px;
+    }
+
+    .section-label:first-of-type {
+        margin-top: 0;
+    }
+
+    /* ===== Module grid ===== */
+    .module-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 16px;
+    }
+
+    .module-card {
+        position: relative;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 22px;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        overflow: hidden;
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .module-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--indigo), var(--pink));
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .module-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(124, 58, 237, 0.4);
+        box-shadow: 0 16px 32px -10px rgba(79, 70, 229, 0.3);
+    }
+
+    .module-card:hover::before {
+        opacity: 1;
+    }
+
+    .icon-badge {
+        width: 42px;
+        height: 42px;
+        border-radius: 11px;
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 19px;
+        margin-bottom: 14px;
+    }
+
+    .module-card h3 {
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 15.5px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 6px;
+        letter-spacing: -0.1px;
+    }
+
+    .module-card p {
+        font-size: 12.5px;
+        color: var(--text-dim);
+        line-height: 1.5;
+        margin-bottom: 14px;
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 10.5px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 20px;
+        background: rgba(16, 185, 129, 0.12);
+        color: #34d399;
+        border: 1px solid rgba(52, 211, 153, 0.25);
+    }
+
+    .badge::before {
+        content: '';
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #34d399;
+        box-shadow: 0 0 6px #34d399;
+    }
+
+    /* Featured card (Full Pipeline) gets a stronger accent */
+    .module-card.featured {
+        background: linear-gradient(155deg, rgba(79,70,229,0.15), rgba(236,72,153,0.08)), var(--surface);
+        border-color: rgba(124, 58, 237, 0.3);
+    }
+
+    .module-card.featured::before {
+        opacity: 1;
+    }
+
+    .module-card.featured .icon-badge {
+        background: linear-gradient(135deg, var(--indigo), var(--pink));
+        border: none;
+    }
+
+    @media (max-width: 600px) {
+        .navbar { padding: 14px 18px; }
+        .container { padding: 34px 16px 50px; }
+        .page-header h1 { font-size: 26px; }
+        .dash-mockup { display: none; }
+    }
+
+    /* ===== Live Analytics Dashboard Mockup ===== */
+    .dash-mockup {
+        position: relative;
+        margin-bottom: 40px;
+        background: rgba(255, 255, 255, 0.035);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 16px;
+        padding: 20px 24px 18px;
+        backdrop-filter: blur(8px);
+        max-width: 520px;
+    }
+
+    .dash-mockup-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+    }
+
+    .dash-dots {
+        display: flex;
+        gap: 5px;
+    }
+
+    .dash-dots span {
+        width: 7px; height: 7px; border-radius: 50%;
+        background: rgba(255,255,255,0.15);
+    }
+
+    .dash-live-tag {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        color: #8b8fb8;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .live-dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: #34d399;
+        box-shadow: 0 0 8px #34d399;
+        animation: livePing 1.6s ease-in-out infinite;
+    }
+
+    @keyframes livePing {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+
+    .dash-kpi-row {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    .dash-kpi {
+        flex: 1;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 10px;
+        padding: 11px 12px;
+    }
+
+    .dash-kpi-num {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--text);
+    }
+
+    .dash-kpi-num.up { color: #34d399; }
+
+    .dash-kpi-lbl {
+        font-size: 10.5px;
+        color: #7175a0;
+        margin-top: 3px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .dash-charts-row {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .dash-bars {
+        flex: 1;
+        display: flex;
+        align-items: flex-end;
+        gap: 6px;
+        height: 54px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        padding-bottom: 2px;
+    }
+
+    .dash-bars span {
+        flex: 1;
+        border-radius: 3px 3px 0 0;
+        background: linear-gradient(180deg, #a5b4fc, var(--indigo));
+        animation: barBounce 2.6s ease-in-out infinite;
+    }
+
+    .dash-bars span:nth-child(1) { animation-delay: 0s; }
+    .dash-bars span:nth-child(2) { animation-delay: 0.2s; }
+    .dash-bars span:nth-child(3) { animation-delay: 0.4s; }
+    .dash-bars span:nth-child(4) { animation-delay: 0.6s; }
+    .dash-bars span:nth-child(5) { animation-delay: 0.8s; }
+    .dash-bars span:nth-child(6) { animation-delay: 1.0s; }
+
+    @keyframes barBounce {
+        0%, 100% { height: 30%; opacity: 0.65; }
+        50% { height: 100%; opacity: 1; }
+    }
+
+    .dash-donut {
+        width: 64px;
+        height: 64px;
+        flex-shrink: 0;
+    }
+
+    .donut-seg {
+        transform-origin: 27px 27px;
+        animation: donutDraw 3.5s ease-in-out infinite;
+    }
+
+    .donut-seg.s1 { animation-delay: 0s; }
+    .donut-seg.s2 { animation-delay: 0.3s; }
+    .donut-seg.s3 { animation-delay: 0.6s; }
+
+    @keyframes donutDraw {
+        0% { stroke-dashoffset: 145; opacity: 0.3; }
+        50%, 70% { stroke-dashoffset: var(--target, 40); opacity: 1; }
+        100% { stroke-dashoffset: var(--target, 40); opacity: 1; }
+    }
+
+    .dash-trend {
+        width: 100%;
+        height: 34px;
+        overflow: visible;
+    }
+
+    .trend-path {
+        fill: none;
+        stroke: url(#trendGradHome);
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-dasharray: 300;
+        stroke-dashoffset: 300;
+        animation: trendDraw 3.5s ease-in-out infinite;
+    }
+
+    .trend-fill {
+        fill: url(#trendFillGradHome);
+        opacity: 0;
+        animation: trendFillIn 3.5s ease-in-out infinite;
+    }
+
+    @keyframes trendDraw {
+        0% { stroke-dashoffset: 300; }
+        55%, 100% { stroke-dashoffset: 0; }
+    }
+
+    @keyframes trendFillIn {
+        0%, 50% { opacity: 0; }
+        70%, 100% { opacity: 1; }
+    }
+
+    .trend-dot {
+        animation: trendDotMove 3.5s ease-in-out infinite;
+    }
+
+    @keyframes trendDotMove {
+        0%, 50% { opacity: 0; }
+        55% { opacity: 1; }
+        100% { opacity: 1; }
+    }
+    /* ===== Floating insight chips (ambient background, across full page) ===== */
+    .chip-field {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+    }
+
+    .chip {
+        position: absolute;
+        bottom: -60px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 13px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.045);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        backdrop-filter: blur(6px);
+        font-size: 11.5px;
+        color: #c7cbf0;
+        white-space: nowrap;
+        animation: floatChip linear infinite;
+    }
+
+    @keyframes floatChip {
+        0% { transform: translateY(0) scale(0.92); opacity: 0; }
+        8% { opacity: 0.8; }
+        90% { opacity: 0.8; }
+        100% { transform: translateY(-115vh) scale(1); opacity: 0; }
+    }
+
+    .chip1  { left: 4%;  animation-duration: 19s; animation-delay: 0s; }
+    .chip2  { left: 15%; animation-duration: 23s; animation-delay: 3s; }
+    .chip3  { left: 27%; animation-duration: 21s; animation-delay: 7s; }
+    .chip4  { left: 39%; animation-duration: 25s; animation-delay: 1s; }
+    .chip5  { left: 51%; animation-duration: 20s; animation-delay: 9s; }
+    .chip6  { left: 63%; animation-duration: 24s; animation-delay: 4s; }
+    .chip7  { left: 74%; animation-duration: 18s; animation-delay: 11s; }
+    .chip8  { left: 85%; animation-duration: 26s; animation-delay: 6s; }
+    .chip9  { left: 93%; animation-duration: 22s; animation-delay: 13s; }
+
+    @media (max-width: 600px) {
+        .chip-field { display: none; }
+    }
+
+</style>
+</head>
+<body>
+
+<div class="chip-field" aria-hidden="true">
+    <div class="chip chip1">📈 Forecast +14%</div>
+    <div class="chip chip2">🔍 Anomaly flagged</div>
+    <div class="chip chip3">✅ Data cleaned</div>
+    <div class="chip chip4">🎯 Segment: Champion</div>
+    <div class="chip chip5">🔒 PII masked</div>
+    <div class="chip chip6">📊 Dashboard ready</div>
+    <div class="chip chip7">🧠 Cluster formed</div>
+    <div class="chip chip8">⚙️ Feature engineered</div>
+    <div class="chip chip9">🏆 Quality Score: A</div>
+</div>
+
+<div class="navbar">
+    <div class="navbar-left">
+        <div class="logo-mark">D</div>
+        <h2>DataSense AI</h2>
+    </div>
+    <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
+</div>
+
+<div class="container">
+    <div class="page-header">
+        <div class="aurora" aria-hidden="true">
+            <div class="aurora-blob blob1"></div>
+            <div class="aurora-blob blob2"></div>
+            <div class="aurora-blob blob3"></div>
+            <div class="aurora-blob blob4"></div>
+        </div>
+        <div class="spark-layer" aria-hidden="true">
+            <div class="spark s1"></div><div class="spark s2"></div><div class="spark s3"></div>
+            <div class="spark s4"></div><div class="spark s5"></div><div class="spark s6"></div>
+            <div class="spark s7"></div><div class="spark s8"></div><div class="spark s9"></div>
+            <div class="spark s10"></div>
+        </div>
+        <h1>Dashboard</h1>
+        <p>Data Analytics &amp; Machine Learning Platform</p>
+    </div>
+
+    <div class="dash-mockup" aria-hidden="true">
+        <div class="dash-mockup-header">
+            <div class="dash-dots"><span></span><span></span><span></span></div>
+            <div class="dash-live-tag"><span class="live-dot"></span> LIVE ANALYSIS</div>
+        </div>
+
+        <div class="dash-kpi-row">
+            <div class="dash-kpi">
+                <div class="dash-kpi-num up">▲ 14.2%</div>
+                <div class="dash-kpi-lbl">Growth</div>
+            </div>
+            <div class="dash-kpi">
+                <div class="dash-kpi-num" id="liveStat">0</div>
+                <div class="dash-kpi-lbl">Records Processed</div>
+            </div>
+            <div class="dash-kpi">
+                <div class="dash-kpi-num">A+</div>
+                <div class="dash-kpi-lbl">Quality Score</div>
+            </div>
+        </div>
+
+        <div class="dash-charts-row">
+            <div class="dash-bars">
+                <span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <svg class="dash-donut" viewBox="0 0 54 54">
+                <circle cx="27" cy="27" r="23" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"/>
+                <circle class="donut-seg s1" cx="27" cy="27" r="23" fill="none" stroke="#4f46e5" stroke-width="7"
+                        stroke-dasharray="145" style="--target:80" transform="rotate(-90 27 27)"/>
+                <circle class="donut-seg s2" cx="27" cy="27" r="23" fill="none" stroke="#ec4899" stroke-width="7"
+                        stroke-dasharray="145" style="--target:115" transform="rotate(70 27 27)"/>
+                <circle class="donut-seg s3" cx="27" cy="27" r="23" fill="none" stroke="#34d399" stroke-width="7"
+                        stroke-dasharray="145" style="--target:128" transform="rotate(160 27 27)"/>
+            </svg>
+        </div>
+
+        <svg class="dash-trend" viewBox="0 0 300 30" preserveAspectRatio="none">
+            <defs>
+                <linearGradient id="trendGradHome" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#a5b4fc"/>
+                    <stop offset="100%" stop-color="#ec4899"/>
+                </linearGradient>
+                <linearGradient id="trendFillGradHome" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.35"/>
+                    <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+                </linearGradient>
+            </defs>
+            <path class="trend-fill" d="M0,22 L30,18 L60,20 L90,12 L120,15 L150,8 L180,10 L210,5 L240,7 L270,3 L300,4 L300,30 L0,30 Z"/>
+            <path class="trend-path" d="M0,22 L30,18 L60,20 L90,12 L120,15 L150,8 L180,10 L210,5 L240,7 L270,3 L300,4"/>
+            <circle class="trend-dot" cx="300" cy="4" r="3.5" fill="#ec4899"/>
+        </svg>
+    </div>
+
+    <div class="section-label">Data Pipeline</div>
+    <div class="module-grid">
+        <a href="{{ url_for('upload') }}" class="module-card">
+            <div class="icon-badge">📂</div>
+            <h3>Dataset Upload</h3>
+            <p>Upload a new CSV or Excel file</p>
+            <span class="badge">Available</span>
+        </a>
+
+        <a href="{{ url_for('connect_database') }}" class="module-card">
+            <div class="icon-badge">🔌</div>
+            <h3>Connect Database</h3>
+            <p>Pull data directly from a live MySQL database</p>
+            <span class="badge">Available</span>
+        </a>
+
+        <a href="{{ url_for('upload_history') }}" class="module-card">
+            <div class="icon-badge">🕓</div>
+            <h3>Upload History</h3>
+            <p>View previously uploaded datasets</p>
+            <span class="badge">Available</span>
+        </a>
+
+        <a href="{{ url_for('upload_history') }}" class="module-card">
+            <div class="icon-badge">🔍</div>
+            <h3>Data Quality Analysis</h3>
+            <p>Select a file from history to scan for duplicates, nulls, unknowns, outliers</p>
+            <span class="badge">Available</span>
+        </a>
+
+        <a href="{{ url_for('clean_data_list') }}" class="module-card">
+            <div class="icon-badge">✅</div>
+            <h3>Clean Data Repository</h3>
+            <p>Select a file to view its cleaned, downloadable data</p>
+            <span class="badge">Available</span>
+        </a>
+
+        <a href="{{ url_for('issues_list') }}" class="module-card">
+            <div class="icon-badge">⚠️</div>
+            <h3>Data Issues Repository</h3>
+            <p>Select a file to review flagged problem rows in tabs</p>
+            <span class="badge">Available</span>
+        </a>
+    </div>
+
+    <div class="section-label">Media Analysis</div>
+    <div class="module-grid">
+        <a href="{{ url_for('media_upload') }}" class="module-card">
+            <div class="icon-badge">🖼️</div>
+            <h3>Image &amp; Video Analysis</h3>
+            <p>Upload a photo or clip for instant brightness, color, sharpness, and motion breakdowns</p>
+            <span class="badge">Available</span>
+        </a>
+
+        <a href="{{ url_for('media_list') }}" class="module-card">
+            <div class="icon-badge">🎬</div>
+            <h3>Media Library</h3>
+            <p>View, re-analyze, or download summaries of previously uploaded images and videos</p>
+            <span class="badge">Available</span>
+        </a>
+    </div>
+
+    <div class="section-label">Analytics &amp; Intelligence</div>
+    <div class="module-grid">
+        <a href="{{ url_for('dashboards_list') }}" class="module-card">
+            <div class="icon-badge">📊</div>
+            <h3>Dashboard</h3>
+            <p>Select a file for auto-generated KPIs and charts</p>
+            <span class="badge">Available</span>
+        </a>
+
+        <a href="{{ url_for('insights_list') }}" class="module-card">
+            <div class="icon-badge">🤖</div>
+            <h3>AI Insight Engine</h3>
+            <p>Select a file for auto-generated business insights</p>
+            <span class="badge">Available</span>
+        </a>
+
+        <a href="{{ url_for('query_list') }}" class="module-card">
+            <div class="icon-badge">🔎</div>
+            <h3>Analytics Query Assistant</h3>
+            <p>Select a file to ask questions about your data</p>
+            <span class="badge">Available</span>
+        </a>
+
+        <a href="{{ url_for('pii_list') }}" class="module-card">
+            <div class="icon-badge">🔒</div>
+            <h3>PII Detection &amp; Masking</h3>
+            <p>Select a file to scan for sensitive customer data</p>
+            <span class="badge">Available</span>
+        </a>
+
+        <a href="{{ url_for('features_list') }}" class="module-card">
+            <div class="icon-badge">⚙️</div>
+            <h3>Feature Engineering</h3>
+            <p>Auto-generate date parts, growth %, margins, and encoded columns</p>
+            <span class="badge">Available</span>
+        </a>
+    </div>
+
+    <div class="section-label">Machine Learning</div>
+    <div class="module-grid">
+        <a href="{{ url_for('anomalies_list') }}" class="module-card">
+            <div class="icon-badge">🚨</div>
+            <h3>Anomaly Detection</h3>
+            <p>ML-based (Isolation Forest) detection of unusual records</p>
+            <span class="badge">Available</span>
+        </a>
+
+        <a href="{{ url_for('forecast_list') }}" class="module-card">
+            <div class="icon-badge">📈</div>
+            <h3>Sales Forecasting</h3>
+            <p>Predict future revenue trends using linear regression</p>
+            <span class="badge">Available</span>
+        </a>
+
+        <a href="{{ url_for('segments_list') }}" class="module-card">
+            <div class="icon-badge">🎯</div>
+            <h3>Customer Segmentation (RFM)</h3>
+            <p>Rule-based Recency/Frequency/Monetary segments</p>
+            <span class="badge">Available</span>
+        </a>
+
+        <a href="{{ url_for('kmeans_list') }}" class="module-card">
+            <div class="icon-badge">🧠</div>
+            <h3>K-Means Segmentation</h3>
+            <p>ML-based customer clustering (scikit-learn)</p>
+            <span class="badge">Available</span>
+        </a>
+
+        <a href="{{ url_for('pipeline_list') }}" class="module-card featured">
+            <div class="icon-badge">⚡</div>
+            <h3>Full Pipeline</h3>
+            <p>One click: Analyze, Clean, Score, and generate a downloadable PDF report</p>
+            <span class="badge">Available</span>
+        </a>
+    </div>
+</div>
+
+<script>
+    // Live-feeling count-up stat (purely cosmetic, no backend call)
+    const statEl = document.getElementById('liveStat');
+    if (statEl) {
+        const target = 128459;
+        const duration = 1400;
+        const start = performance.now();
+
+        function animateCount(now) {
+            const progress = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            statEl.textContent = Math.floor(eased * target).toLocaleString();
+            if (progress < 1) requestAnimationFrame(animateCount);
+        }
+        requestAnimationFrame(animateCount);
+    }
+</script>
+</body>
+</html>
